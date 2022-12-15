@@ -9,7 +9,6 @@
 //
 
 import Foundation
-import CoreFoundation
 
 /// A value that represents a file, a directory or a symbolic link within a ZIP `Archive`.
 ///
@@ -117,13 +116,13 @@ public struct Entry: Equatable {
     public func path(using encoding: String.Encoding) -> String {
         return String(data: self.centralDirectoryStructure.fileNameData, encoding: encoding) ?? ""
     }
+
+    static let dosLatinUSEncoding = UInt32(0x400)
+    static let codepage437 = String.Encoding(rawValue: UInt(1 << 31) | UInt(dosLatinUSEncoding))
+
     /// The `path` of the receiver within a ZIP `Archive`.
     public var path: String {
-        let dosLatinUS = 0x400
-        let dosLatinUSEncoding = CFStringEncoding(dosLatinUS)
-        let dosLatinUSStringEncoding = CFStringConvertEncodingToNSStringEncoding(dosLatinUSEncoding)
-        let codepage437 = String.Encoding(rawValue: dosLatinUSStringEncoding)
-        let encoding = self.centralDirectoryStructure.usesUTF8PathEncoding ? .utf8 : codepage437
+        let encoding = self.centralDirectoryStructure.usesUTF8PathEncoding ? .utf8 : Self.codepage437
         return self.path(using: encoding)
     }
     /// The file attributes of the receiver as key/value pairs.
