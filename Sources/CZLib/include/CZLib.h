@@ -1,5 +1,5 @@
 #ifndef CZLib_h
-#define CZLibs_h
+#define CZLib_h
 
 #include <stdio.h>
 
