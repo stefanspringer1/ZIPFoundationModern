@@ -36,6 +36,8 @@ class MemoryFile {
             let result = writable
                 ? funopen(cookie.toOpaque(), readStub, writeStub, seekStub, closeStub)
                 : funopen(cookie.toOpaque(), readStub, nil, seekStub, closeStub)
+        #elseif os(Windows)
+            fatalError("Windows not supported here yet")
         #else
             let stubs = cookie_io_functions_t(read: readStub, write: writeStub, seek: seekStub, close: closeStub)
             let result = fopencookie(cookie.toOpaque(), mode, stubs)
@@ -125,6 +127,8 @@ private func closeStub(_ cookie: UnsafeMutableRawPointer?) -> Int32 {
         return fpos_t(fileFromCookie(cookie: cookie).seek(offset: Int(offset), whence: whence))
     }
 
+#elseif os(Windows)
+// nothing yet, sorry!
 #else
     private func readStub(_ cookie: UnsafeMutableRawPointer?,
                           _ bytePtr: UnsafeMutablePointer<Int8>?,
