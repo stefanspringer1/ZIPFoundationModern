@@ -50,15 +50,6 @@ extension Archive {
                                                                           offsetToStartOfCentralDirectory: 0,
                                                                           zipFileCommentLength: 0,
                                                                           zipFileCommentData: Data())
-
-            guard !FileManager.default.fileExists(atPath: url.path) else {
-                return nil
-            }
-
-            guard FileManager.default.isWritableFile(atPath: url.deletingLastPathComponent().path) else {
-                return nil
-            }
-
             do {
                 try endOfCentralDirectoryRecord.data.write(to: url, options: [.withoutOverwriting])
             } catch { return nil }

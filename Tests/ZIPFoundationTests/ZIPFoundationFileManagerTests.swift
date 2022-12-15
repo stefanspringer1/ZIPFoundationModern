@@ -79,9 +79,16 @@ extension ZIPFoundationTests {
         do {
             let unwritableURL = URL(fileURLWithPath: "/test.zip")
             try fileManager.zipItem(at: URL(fileURLWithPath: NSTemporaryDirectory()), to: unwritableURL)
+            #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
             XCTFail("Error when zipping to non writable archive not raised")
-        } catch let error as Archive.ArchiveError { XCTAssert(error == .unwritableArchive)
-        } catch { XCTFail("Unexpected error while trying to zip via fileManager.") }
+            #else
+            print("it's odd, but you can totally write to the root of this drive. skipping test")
+            #endif
+        } catch let error as Archive.ArchiveError {
+            XCTAssert(error == .unwritableArchive)
+        } catch {
+            XCTFail("Unexpected error while trying to zip via fileManager: \(error)")
+        }
 
         var directoryArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
         let pathComponent = pathComponent(for: #function) + "Directory"
