@@ -1,6 +1,14 @@
 import Foundation
 
 public class Handle {
+    public enum OpenFlags {
+        case read
+        case write
+        case create
+        case truncateToZeroLength
+        case append
+    }
+
     private enum Backing {
         case memory(MemoryFile)
         case file(FileHandle)
@@ -8,39 +16,45 @@ public class Handle {
 
     private let backing: Backing
 
-    public let writable: Bool
-    public let append: Bool
+    public let openFlags: Set<OpenFlags>
 
     init(openedMemoryFile: MemoryFile, writable: Bool, append: Bool) {
         backing = .memory(openedMemoryFile)
-        self.writable = writable
-        self.append = append
+
+        var flags: Set<OpenFlags> = [.read]
+        if writable {
+            flags.insert(.write)
+        }
+
+        if append {
+            flags.insert(.append)
+        }
+
+        openFlags = flags
     }
 
+    /// equivalent to `rb`
     public init(forReadingFrom url: URL) throws {
         backing = try .file(.init(forReadingFrom: url))
-        writable = false
-        append = false
+        openFlags = [.read]
     }
 
+    /// equivalent to `rb+`
     public init(forUpdating url: URL) throws {
         backing = try .file(.init(forUpdating: url))
-        writable = true
-        append = true
+        openFlags = [.read, .write]
     }
 
-    /// like POSIX "a+", creates the file if needed
-    public init(forAppendUpdate url: URL) throws {
-        backing = try .file(.init(forAppendUpdate: url))
-        writable = true
-        append = true
-    }
-
-    /// like POSIX "w+", creates the file if needed
+    /// equivalent to `wb+`
     public init(forWriteUpdate url: URL) throws {
         backing = try .file(.init(forWriteUpdate: url))
-        writable = true
-        append = false
+        openFlags = [.read, .write, .create, .truncateToZeroLength]
+    }
+
+    /// equivalent to `ab+`
+    public init(forAppendUpdate url: URL) throws {
+        backing = try .file(.init(forAppendUpdate: url))
+        openFlags = [.read, .write, .create, .append]
     }
 
     public func seek(toOffset offset: UInt64) throws {
@@ -89,10 +103,11 @@ public class Handle {
     }
 
     public func write(contentsOf data: some DataProtocol) throws {
-        guard writable else { throw Data.DataError.unwritableFile }
+        guard openFlags.contains(.write) else { throw Data.DataError.unwritableFile }
 
         switch backing {
         case let .file(file):
+            if openFlags.contains(.append) { _ = try seekToEnd() }
             try file.write(contentsOf: data)
         case .memory:
             fatalError()
@@ -118,7 +133,7 @@ public class Handle {
     }
 
     public func truncate(atOffset offset: UInt64) throws {
-        guard writable else { throw Data.DataError.unwritableFile }
+        guard openFlags.contains(.write) else { throw Data.DataError.unwritableFile }
 
         switch backing {
         case let .file(file):
