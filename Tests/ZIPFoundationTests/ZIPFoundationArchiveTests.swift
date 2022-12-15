@@ -12,16 +12,17 @@ import XCTest
 @testable import ZIPFoundation
 
 extension ZIPFoundationTests {
-
     func testArchiveInvalidEOCDRecordConditions() {
         let emptyECDR = Archive.EndOfCentralDirectoryRecord(data: Data(),
-                                                            additionalDataProvider: {_ -> Data in
-            return Data() })
+                                                            additionalDataProvider: { _ -> Data in
+                                                                Data()
+                                                            })
         XCTAssertNil(emptyECDR)
         let invalidECDRData = Data(count: 22)
         let invalidECDR = Archive.EndOfCentralDirectoryRecord(data: invalidECDRData,
-                                                              additionalDataProvider: {_ -> Data in
-            return Data() })
+                                                              additionalDataProvider: { _ -> Data in
+                                                                  Data()
+                                                              })
         XCTAssertNil(invalidECDR)
     }
 }

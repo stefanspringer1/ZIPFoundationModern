@@ -72,11 +72,11 @@ extension ZIPFoundationTests {
     }
 
     func testCRC32Calculation() {
-        let dataURL = self.resourceURL(for: #function, pathExtension: "data")
-        let data = (try? Data.init(contentsOf: dataURL)) ?? Data()
-        XCTAssertEqual(data.crc32(checksum: 0), 1400077496)
+        let dataURL = resourceURL(for: #function, pathExtension: "data")
+        let data = (try? Data(contentsOf: dataURL)) ?? Data()
+        XCTAssertEqual(data.crc32(checksum: 0), 1_400_077_496)
         #if canImport(zlib)
-        XCTAssertEqual(data.crc32(checksum: 0), data.builtInCRC32(checksum: 0))
+            XCTAssertEqual(data.crc32(checksum: 0), data.builtInCRC32(checksum: 0))
         #endif
     }
 

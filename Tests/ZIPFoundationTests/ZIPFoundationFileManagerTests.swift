@@ -14,9 +14,9 @@ import XCTest
 extension ZIPFoundationTests {
     func testZipItem() {
         let fileManager = FileManager()
-        let assetURL = self.resourceURL(for: #function, pathExtension: "png")
+        let assetURL = resourceURL(for: #function, pathExtension: "png")
         var fileArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
-        fileArchiveURL.appendPathComponent(self.archiveName(for: #function))
+        fileArchiveURL.appendPathComponent(archiveName(for: #function))
         do {
             try fileManager.zipItem(at: assetURL, to: fileArchiveURL)
         } catch { XCTFail("Failed to zip item at URL:\(assetURL)") }
@@ -28,13 +28,13 @@ extension ZIPFoundationTests {
         var directoryURL = ZIPFoundationTests.tempZipDirectoryURL
         directoryURL.appendPathComponent(ProcessInfo.processInfo.globallyUniqueString)
         var directoryArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
-        let pathComponent = self.archiveName(for: #function, suffix: "Directory")
+        let pathComponent = archiveName(for: #function, suffix: "Directory")
         directoryArchiveURL.appendPathComponent(pathComponent)
         var parentDirectoryArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
-        let parentPathComponent = self.archiveName(for: #function, suffix: "ParentDirectory")
+        let parentPathComponent = archiveName(for: #function, suffix: "ParentDirectory")
         parentDirectoryArchiveURL.appendPathComponent(parentPathComponent)
         var compressedDirectoryArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
-        let compressedPathComponent = self.archiveName(for: #function, suffix: "CompressedDirectory")
+        let compressedPathComponent = archiveName(for: #function, suffix: "CompressedDirectory")
         compressedDirectoryArchiveURL.appendPathComponent(compressedPathComponent)
         let newAssetURL = directoryURL.appendingPathComponent(assetURL.lastPathComponent)
         do {
@@ -80,7 +80,7 @@ extension ZIPFoundationTests {
         } catch let error as Archive.ArchiveError { XCTAssert(error == .unwritableArchive)
         } catch { XCTFail("Unexpected error while trying to zip via fileManager.") }
         var directoryArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
-        let pathComponent = self.pathComponent(for: #function) + "Directory"
+        let pathComponent = pathComponent(for: #function) + "Directory"
         directoryArchiveURL.appendPathComponent(pathComponent)
         directoryArchiveURL.appendPathExtension("zip")
         var unreadableFileURL = ZIPFoundationTests.tempZipDirectoryURL
@@ -102,8 +102,8 @@ extension ZIPFoundationTests {
 
     func testUnzipItem() {
         let fileManager = FileManager()
-        let archive = self.archive(for: #function, mode: .read)
-        let destinationURL = self.createDirectory(for: #function)
+        let archive = archive(for: #function, mode: .read)
+        let destinationURL = createDirectory(for: #function)
         do {
             try fileManager.unzipItem(at: archive.url, to: destinationURL)
         } catch {
@@ -121,8 +121,8 @@ extension ZIPFoundationTests {
     func testUnzipItemWithPreferredEncoding() {
         let fileManager = FileManager()
         let encoding = String.Encoding.utf8
-        let archive = self.archive(for: #function, mode: .read, preferredEncoding: encoding)
-        let destinationURL = self.createDirectory(for: #function)
+        let archive = archive(for: #function, mode: .read, preferredEncoding: encoding)
+        let destinationURL = createDirectory(for: #function)
         do {
             try fileManager.unzipItem(at: archive.url, to: destinationURL, preferredEncoding: encoding)
         } catch {
@@ -140,7 +140,7 @@ extension ZIPFoundationTests {
     func testUnzipItemErrorConditions() {
         var nonexistantArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
         nonexistantArchiveURL.appendPathComponent("invalid")
-        let existingArchiveURL = self.resourceURL(for: #function, pathExtension: "zip")
+        let existingArchiveURL = resourceURL(for: #function, pathExtension: "zip")
         let destinationURL = ZIPFoundationTests.tempZipDirectoryURL
         var existingURL = destinationURL
         existingURL.appendPathComponent("test")
@@ -162,7 +162,7 @@ extension ZIPFoundationTests {
         } catch {
             XCTFail("Unexpected error while trying to unzip via fileManager."); return
         }
-        let nonZipArchiveURL = self.resourceURL(for: #function, pathExtension: "png")
+        let nonZipArchiveURL = resourceURL(for: #function, pathExtension: "png")
         do {
             try fileManager.unzipItem(at: nonZipArchiveURL, to: destinationURL)
             XCTFail("Error when trying to unzip non-archive not raised")
@@ -182,12 +182,12 @@ extension ZIPFoundationTests {
     }
 
     func testFileAttributeHelperMethods() {
-        let cdsBytes: [UInt8] = [0x50, 0x4b, 0x01, 0x02, 0x1e, 0x15, 0x14, 0x00,
-                                 0x08, 0x08, 0x08, 0x00, 0xab, 0x85, 0x77, 0x47,
+        let cdsBytes: [UInt8] = [0x50, 0x4B, 0x01, 0x02, 0x1E, 0x15, 0x14, 0x00,
+                                 0x08, 0x08, 0x08, 0x00, 0xAB, 0x85, 0x77, 0x47,
                                  0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                 0xb0, 0x11, 0x00, 0x00, 0x00, 0x00]
+                                 0xB0, 0x11, 0x00, 0x00, 0x00, 0x00]
         guard let cds = Entry.CentralDirectoryStructure(data: Data(cdsBytes),
                                                         additionalDataProvider: { count -> Data in
                                                             guard let pathData = "/".data(using: .utf8) else {
@@ -195,17 +195,19 @@ extension ZIPFoundationTests {
                                                             }
                                                             XCTAssert(count == pathData.count)
                                                             return pathData
-                                                        }) else {
+                                                        })
+        else {
             XCTFail("Failed to read central directory structure."); return
         }
-        let lfhBytes: [UInt8] = [0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x08, 0x08,
-                                 0x08, 0x00, 0xab, 0x85, 0x77, 0x47, 0x00, 0x00,
+        let lfhBytes: [UInt8] = [0x50, 0x4B, 0x03, 0x04, 0x14, 0x00, 0x08, 0x08,
+                                 0x08, 0x00, 0xAB, 0x85, 0x77, 0x47, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         guard let lfh = Entry.LocalFileHeader(data: Data(lfhBytes),
                                               additionalDataProvider: { _ -> Data in
-                                                return Data()
-                                              }) else {
+                                                  Data()
+                                              })
+        else {
             XCTFail("Failed to read local file header."); return
         }
         guard let entry = Entry(centralDirectoryStructure: cds, localFileHeader: lfh) else {
@@ -246,7 +248,7 @@ extension ZIPFoundationTests {
         XCTAssert(msDOSTime == 0)
         let invalidEarlyMSDOSDate = Date(timeIntervalSince1970: 0).fileModificationDate
         XCTAssert(invalidEarlyMSDOSDate == 33)
-        let invalidLateMSDOSDate = Date(timeIntervalSince1970: 4102444800).fileModificationDate
+        let invalidLateMSDOSDate = Date(timeIntervalSince1970: 4_102_444_800).fileModificationDate
         XCTAssert(invalidLateMSDOSDate == 60961)
     }
 
@@ -293,9 +295,9 @@ extension ZIPFoundationTests {
         guard let testDate = testDateComponents.date else {
             XCTFail("Failed to create test date/timestamp"); return
         }
-        let assetURL = self.resourceURL(for: #function, pathExtension: "png")
+        let assetURL = resourceURL(for: #function, pathExtension: "png")
         let fileManager = FileManager()
-        let archive = self.archive(for: #function, mode: .create)
+        let archive = archive(for: #function, mode: .create)
         do {
             try fileManager.setAttributes([.modificationDate: testDate], ofItemAtPath: assetURL.path)
             let relativePath = assetURL.lastPathComponent
@@ -317,9 +319,9 @@ extension ZIPFoundationTests {
 
     func testPOSIXPermissions() {
         let permissions = NSNumber(value: Int16(0o753))
-        let assetURL = self.resourceURL(for: #function, pathExtension: "png")
+        let assetURL = resourceURL(for: #function, pathExtension: "png")
         let fileManager = FileManager()
-        let archive = self.archive(for: #function, mode: .create)
+        let archive = archive(for: #function, mode: .create)
         do {
             try fileManager.setAttributes([.posixPermissions: permissions], ofItemAtPath: assetURL.path)
             let relativePath = assetURL.lastPathComponent
@@ -337,8 +339,8 @@ extension ZIPFoundationTests {
 
     func testCRC32Check() {
         let fileManager = FileManager()
-        let archive = self.archive(for: #function, mode: .read)
-        let destinationURL = self.createDirectory(for: #function)
+        let archive = archive(for: #function, mode: .read)
+        let destinationURL = createDirectory(for: #function)
         do {
             try fileManager.unzipItem(at: archive.url, to: destinationURL)
         } catch let error as Archive.ArchiveError {
@@ -352,8 +354,8 @@ extension ZIPFoundationTests {
 
     func testTraversalAttack() {
         let fileManager = FileManager()
-        let archive = self.archive(for: #function, mode: .read)
-        let destinationURL = self.createDirectory(for: #function)
+        let archive = archive(for: #function, mode: .read)
+        let destinationURL = createDirectory(for: #function)
         do {
             try fileManager.unzipItem(at: archive.url, to: destinationURL)
         } catch {
@@ -363,7 +365,7 @@ extension ZIPFoundationTests {
     }
 
     func testTemporaryReplacementDirectoryURL() {
-        let archive = self.archive(for: #function, mode: .create)
+        let archive = archive(for: #function, mode: .create)
         var tempURLs = Set<URL>()
         defer {
             for url in tempURLs {
@@ -371,23 +373,23 @@ extension ZIPFoundationTests {
             }
         }
         // We choose 2000 temp directories to test workaround for http://openradar.appspot.com/50553219
-        for _ in 1...2000 {
+        for _ in 1 ... 2000 {
             let tempDir = URL.temporaryReplacementDirectoryURL(for: archive)
             XCTAssertFalse(tempURLs.contains(tempDir), "Temp directory URL should be unique. \(tempDir)")
             tempURLs.insert(tempDir)
         }
 
         #if MEMORYFILE_IMPLEMENTED
-        // Also cover the fallback codepath in the helper method to generate a unique temp URL.
-        // In-memory archives have no filesystem representation and therefore don't need a per-volume
-        // temp URL.
-        guard let memoryArchive = Archive(data: Data(), accessMode: .create) else {
-            XCTFail("Temporary memory archive creation failed.")
-            return
-        }
+            // Also cover the fallback codepath in the helper method to generate a unique temp URL.
+            // In-memory archives have no filesystem representation and therefore don't need a per-volume
+            // temp URL.
+            guard let memoryArchive = Archive(data: Data(), accessMode: .create) else {
+                XCTFail("Temporary memory archive creation failed.")
+                return
+            }
 
-        let memoryTempURL = URL.temporaryReplacementDirectoryURL(for: memoryArchive)
-        XCTAssertNotNil(memoryTempURL, "Temporary URL creation for in-memory archive failed.")
+            let memoryTempURL = URL.temporaryReplacementDirectoryURL(for: memoryArchive)
+            XCTAssertNotNil(memoryTempURL, "Temporary URL creation for in-memory archive failed.")
         #endif
     }
 }

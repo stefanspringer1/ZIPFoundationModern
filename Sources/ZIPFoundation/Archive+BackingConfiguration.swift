@@ -11,7 +11,6 @@
 import Foundation
 
 extension Archive {
-
     struct BackingConfiguration {
         let file: Handle
         let endOfCentralDirectoryRecord: EndOfCentralDirectoryRecord
@@ -21,7 +20,8 @@ extension Archive {
         init(file: Handle,
              endOfCentralDirectoryRecord: EndOfCentralDirectoryRecord,
              zip64EndOfCentralDirectory: ZIP64EndOfCentralDirectory? = nil,
-             memoryFile: MemoryFile? = nil) {
+             memoryFile: MemoryFile? = nil)
+        {
             self.file = file
             self.endOfCentralDirectoryRecord = endOfCentralDirectoryRecord
             self.zip64EndOfCentralDirectory = zip64EndOfCentralDirectory
@@ -30,11 +30,13 @@ extension Archive {
     }
 
     static func makeBackingConfiguration(for url: URL, mode: AccessMode)
-    -> BackingConfiguration? {
+        -> BackingConfiguration?
+    {
         switch mode {
         case .read:
             guard let archiveFile = try? Handle(forReadingFrom: url),
-                  let (eocdRecord, zip64EOCD) = Archive.scanForEndOfCentralDirectoryRecord(in: archiveFile) else {
+                  let (eocdRecord, zip64EOCD) = Archive.scanForEndOfCentralDirectoryRecord(in: archiveFile)
+            else {
                 return nil
             }
             return BackingConfiguration(file: archiveFile,
@@ -54,7 +56,8 @@ extension Archive {
             fallthrough
         case .update:
             guard let archiveFile = try? Handle(forUpdating: url),
-                  let (eocdRecord, zip64EOCD) = Archive.scanForEndOfCentralDirectoryRecord(in: archiveFile) else {
+                  let (eocdRecord, zip64EOCD) = Archive.scanForEndOfCentralDirectoryRecord(in: archiveFile)
+            else {
                 return nil
             }
             try? archiveFile.seek(toOffset: 0)
@@ -65,7 +68,8 @@ extension Archive {
     }
 
     static func makeBackingConfiguration(for data: Data, mode: AccessMode)
-    -> BackingConfiguration? {
+        -> BackingConfiguration?
+    {
         let posixMode: String
         switch mode {
         case .read: posixMode = "rb"

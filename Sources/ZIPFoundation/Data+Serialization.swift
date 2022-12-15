@@ -23,25 +23,27 @@ extension Data {
     }
 
     func scanValue<T>(start: Int) -> T {
-        let subdata = self.subdata(in: start..<start+MemoryLayout<T>.size)
+        let subdata = subdata(in: start ..< start + MemoryLayout<T>.size)
         return subdata.withUnsafeBytes { $0.load(as: T.self) }
     }
 
     static func readStruct<T>(from file: Handle, at offset: UInt64)
-    -> T? where T: DataSerializable {
+        -> T? where T: DataSerializable
+    {
         guard offset <= .max else { return nil }
         try? file.seek(toOffset: offset)
-        guard let data = try? self.readChunk(of: T.size, from: file) else {
+        guard let data = try? readChunk(of: T.size, from: file) else {
             return nil
         }
-        let structure = T(data: data, additionalDataProvider: { (additionalDataSize) -> Data in
-            return try self.readChunk(of: additionalDataSize, from: file)
+        let structure = T(data: data, additionalDataProvider: { additionalDataSize -> Data in
+            try self.readChunk(of: additionalDataSize, from: file)
         })
         return structure
     }
 
     static func consumePart(of size: Int64, chunkSize: Int, skipCRC32: Bool = false,
-                            provider: Provider, consumer: Consumer) throws -> CRC32 {
+                            provider: Provider, consumer: Consumer) throws -> CRC32
+    {
         var checksum = CRC32(0)
         guard size > 0 else {
             try consumer(Data())
@@ -68,7 +70,7 @@ extension Data {
         guard size > 0 else {
             return Data()
         }
-        
+
         let data: Data?
         do {
             data = try file.read(upToCount: size)
@@ -88,8 +90,9 @@ extension Data {
         return chunk.count
     }
 
-    static func writeLargeChunk(_ chunk: Data, size: UInt64, bufferSize: Int,
-                                to file: Handle) throws -> UInt64 {
+    static func writeLargeChunk(_ chunk: Data, size _: UInt64, bufferSize _: Int,
+                                to file: Handle) throws -> UInt64
+    {
         try file.write(contentsOf: chunk)
         return UInt64(chunk.count)
     }

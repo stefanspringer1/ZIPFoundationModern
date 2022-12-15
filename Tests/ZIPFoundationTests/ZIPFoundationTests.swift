@@ -18,7 +18,7 @@ enum AdditionalDataError: Error {
 
 class ZIPFoundationTests: XCTestCase {
     class var testBundle: Bundle {
-        return Bundle(for: self)
+        Bundle(for: self)
     }
 
     static var tempZipDirectoryURL: URL = {
@@ -27,7 +27,7 @@ class ZIPFoundationTests: XCTestCase {
         tempZipDirectory.appendPathComponent("ZipTempDirectory")
         // We use a unique path to support parallel test runs via
         // "swift test --parallel"
-        // When using --parallel, setUp() and tearDown() are called 
+        // When using --parallel, setUp() and tearDown() are called
         // multiple times.
         tempZipDirectory.appendPathComponent(processInfo.globallyUniqueString)
         return tempZipDirectory
@@ -45,8 +45,8 @@ class ZIPFoundationTests: XCTestCase {
                 try fileManager.removeItem(at: tempZipDirectoryURL)
             }
             try fileManager.createDirectory(at: tempZipDirectoryURL,
-                                                    withIntermediateDirectories: true,
-                                                    attributes: nil)
+                                            withIntermediateDirectories: true,
+                                            attributes: nil)
         } catch {
             XCTFail("Unexpected error while trying to set up test resources.")
         }
@@ -65,7 +65,8 @@ class ZIPFoundationTests: XCTestCase {
     // MARK: - Helpers
 
     func archive(for testFunction: String, mode: Archive.AccessMode,
-                 preferredEncoding: String.Encoding? = nil) -> Archive {
+                 preferredEncoding: String.Encoding? = nil) -> Archive
+    {
         var sourceArchiveURL = ZIPFoundationTests.resourceDirectoryURL
         sourceArchiveURL.appendPathComponent(testFunction.replacingOccurrences(of: "()", with: ""))
         sourceArchiveURL.appendPathExtension("zip")
@@ -78,7 +79,8 @@ class ZIPFoundationTests: XCTestCase {
                 try fileManager.copyItem(at: sourceArchiveURL, to: destinationArchiveURL)
             }
             guard let archive = Archive(url: destinationArchiveURL, accessMode: mode,
-                                        preferredEncoding: preferredEncoding) else {
+                                        preferredEncoding: preferredEncoding)
+            else {
                 throw Archive.ArchiveError.unreadableArchive
             }
             return archive
@@ -94,7 +96,7 @@ class ZIPFoundationTests: XCTestCase {
     }
 
     func pathComponent(for testFunction: String) -> String {
-        return testFunction.replacingOccurrences(of: "()", with: "")
+        testFunction.replacingOccurrences(of: "()", with: "")
     }
 
     func archiveName(for testFunction: String, suffix: String = "") -> String {
@@ -122,7 +124,7 @@ class ZIPFoundationTests: XCTestCase {
     func createDirectory(for testFunction: String) -> URL {
         let fileManager = FileManager()
         var URL = ZIPFoundationTests.tempZipDirectoryURL
-        URL = URL.appendingPathComponent(self.pathComponent(for: testFunction))
+        URL = URL.appendingPathComponent(pathComponent(for: testFunction))
         do {
             try fileManager.createDirectory(at: URL, withIntermediateDirectories: true, attributes: nil)
         } catch {
@@ -135,9 +137,9 @@ class ZIPFoundationTests: XCTestCase {
 
     func runWithFileDescriptorLimit(_ limit: UInt64, handler: () -> Void) {
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(Android)
-        let fileNoFlag = RLIMIT_NOFILE
+            let fileNoFlag = RLIMIT_NOFILE
         #else
-        let fileNoFlag = Int32(RLIMIT_NOFILE.rawValue)
+            let fileNoFlag = Int32(RLIMIT_NOFILE.rawValue)
         #endif
         var storedRlimit = rlimit()
         getrlimit(fileNoFlag, &storedRlimit)
@@ -150,10 +152,10 @@ class ZIPFoundationTests: XCTestCase {
 
     func runWithoutMemory(handler: () -> Void) {
         #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-        let systemAllocator = CFAllocatorGetDefault().takeUnretainedValue()
-        CFAllocatorSetDefault(kCFAllocatorNull)
-        defer { CFAllocatorSetDefault(systemAllocator) }
-        handler()
+            let systemAllocator = CFAllocatorGetDefault().takeUnretainedValue()
+            CFAllocatorSetDefault(kCFAllocatorNull)
+            defer { CFAllocatorSetDefault(systemAllocator) }
+            handler()
         #endif
     }
 
@@ -178,7 +180,7 @@ extension Archive {
         var isCorrect = false
         do {
             for entry in self {
-                let checksum = try self.extract(entry, consumer: { _ in })
+                let checksum = try extract(entry, consumer: { _ in })
                 isCorrect = checksum == entry.checksum
                 guard isCorrect else { break }
             }
@@ -192,7 +194,7 @@ extension Archive {
 extension Data {
     static func makeRandomData(size: Int) -> Data {
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-        let bytes = [UInt32](repeating: 0, count: size).map { _ in UInt32.random(in: 0...UInt32.max) }
+            let bytes = [UInt32](repeating: 0, count: size).map { _ in UInt32.random(in: 0 ... UInt32.max) }
         #else
             let bytes = [UInt32](repeating: 0, count: size).map { _ in random() }
         #endif
@@ -201,20 +203,20 @@ extension Data {
 }
 
 #if os(macOS)
-extension NSUserScriptTask {
-    static func makeVolumeCreationTask(at tempDir: URL, volumeName: String) throws -> NSUserScriptTask {
-        let scriptURL = tempDir.appendingPathComponent("createVol.sh", isDirectory: false)
-        let dmgURL = tempDir.appendingPathComponent(volumeName).appendingPathExtension("dmg")
-        let script = """
-        #!/bin/bash
-        hdiutil create -size 5m -fs HFS+ -type SPARSEBUNDLE -ov -volname "\(volumeName)" "\(dmgURL.path)"
-        hdiutil attach -nobrowse "\(dmgURL.appendingPathExtension("sparsebundle").path)"
+    extension NSUserScriptTask {
+        static func makeVolumeCreationTask(at tempDir: URL, volumeName: String) throws -> NSUserScriptTask {
+            let scriptURL = tempDir.appendingPathComponent("createVol.sh", isDirectory: false)
+            let dmgURL = tempDir.appendingPathComponent(volumeName).appendingPathExtension("dmg")
+            let script = """
+            #!/bin/bash
+            hdiutil create -size 5m -fs HFS+ -type SPARSEBUNDLE -ov -volname "\(volumeName)" "\(dmgURL.path)"
+            hdiutil attach -nobrowse "\(dmgURL.appendingPathExtension("sparsebundle").path)"
 
-        """
-        try script.write(to: scriptURL, atomically: false, encoding: .utf8)
-        let permissions = NSNumber(value: Int16(0o770))
-        try FileManager.default.setAttributes([.posixPermissions: permissions], ofItemAtPath: scriptURL.path)
-        return try NSUserScriptTask(url: scriptURL)
+            """
+            try script.write(to: scriptURL, atomically: false, encoding: .utf8)
+            let permissions = NSNumber(value: Int16(0o770))
+            try FileManager.default.setAttributes([.posixPermissions: permissions], ofItemAtPath: scriptURL.path)
+            return try NSUserScriptTask(url: scriptURL)
+        }
     }
-}
 #endif

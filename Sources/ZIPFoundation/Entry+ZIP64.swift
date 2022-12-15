@@ -31,7 +31,7 @@ extension Entry {
     }
 
     var zip64ExtendedInformation: ZIP64ExtendedInformation? {
-        self.centralDirectoryStructure.zip64ExtendedInformation
+        centralDirectoryStructure.zip64ExtendedInformation
     }
 }
 
@@ -40,8 +40,8 @@ typealias Field = Entry.ZIP64ExtendedInformation.Field
 extension Entry.LocalFileHeader {
     var validFields: [Field] {
         var fields: [Field] = []
-        if self.uncompressedSize == .max { fields.append(.uncompressedSize) }
-        if self.compressedSize == .max { fields.append(.compressedSize) }
+        if uncompressedSize == .max { fields.append(.uncompressedSize) }
+        if compressedSize == .max { fields.append(.compressedSize) }
         return fields
     }
 }
@@ -49,14 +49,15 @@ extension Entry.LocalFileHeader {
 extension Entry.CentralDirectoryStructure {
     var validFields: [Field] {
         var fields: [Field] = []
-        if self.uncompressedSize == .max { fields.append(.uncompressedSize) }
-        if self.compressedSize == .max { fields.append(.compressedSize) }
-        if self.relativeOffsetOfLocalHeader == .max { fields.append(.relativeOffsetOfLocalHeader) }
-        if self.diskNumberStart == .max { fields.append(.diskNumberStart) }
+        if uncompressedSize == .max { fields.append(.uncompressedSize) }
+        if compressedSize == .max { fields.append(.compressedSize) }
+        if relativeOffsetOfLocalHeader == .max { fields.append(.relativeOffsetOfLocalHeader) }
+        if diskNumberStart == .max { fields.append(.diskNumberStart) }
         return fields
     }
+
     var zip64ExtendedInformation: Entry.ZIP64ExtendedInformation? {
-        self.extraFields?.compactMap { $0 as? Entry.ZIP64ExtendedInformation }.first
+        extraFields?.compactMap { $0 as? Entry.ZIP64ExtendedInformation }.first
     }
 }
 
@@ -78,24 +79,24 @@ extension Entry.ZIP64ExtendedInformation {
     }
 
     var data: Data {
-        var headerID = self.headerID
-        var dataSize = self.dataSize
-        var uncompressedSize = self.uncompressedSize
-        var compressedSize = self.compressedSize
-        var relativeOffsetOfLFH = self.relativeOffsetOfLocalHeader
-        var diskNumberStart = self.diskNumberStart
+        var headerID = headerID
+        var dataSize = dataSize
+        var uncompressedSize = uncompressedSize
+        var compressedSize = compressedSize
+        var relativeOffsetOfLFH = relativeOffsetOfLocalHeader
+        var diskNumberStart = diskNumberStart
         var data = Data()
-        withUnsafePointer(to: &headerID, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        withUnsafePointer(to: &dataSize, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
+        withUnsafePointer(to: &headerID) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &dataSize) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
         if uncompressedSize != 0 || compressedSize != 0 {
-            withUnsafePointer(to: &uncompressedSize, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-            withUnsafePointer(to: &compressedSize, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
+            withUnsafePointer(to: &uncompressedSize) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+            withUnsafePointer(to: &compressedSize) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
         }
         if relativeOffsetOfLocalHeader != 0 {
-            withUnsafePointer(to: &relativeOffsetOfLFH, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
+            withUnsafePointer(to: &relativeOffsetOfLFH) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
         }
         if diskNumberStart != 0 {
-            withUnsafePointer(to: &diskNumberStart, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
+            withUnsafePointer(to: &diskNumberStart) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
         }
         return data
     }
@@ -138,7 +139,7 @@ extension Entry.ZIP64ExtendedInformation {
         diskNumberStart = existingInfo.diskNumberStart
         let tempDataSize = [relativeOffsetOfLocalHeader, uncompressedSize, compressedSize]
             .filter { $0 != 0 }
-            .reduce(UInt16(0), { $0 + UInt16(MemoryLayout.size(ofValue: $1))})
+            .reduce(UInt16(0)) { $0 + UInt16(MemoryLayout.size(ofValue: $1)) }
         dataSize = tempDataSize + (diskNumberStart > 0 ? UInt16(MemoryLayout.size(ofValue: diskNumberStart)) : 0)
         if dataSize == 0 { return nil }
     }
@@ -156,7 +157,7 @@ extension Entry.ZIP64ExtendedInformation {
             let nextOffset = offset + headerSize + Int(dataSize)
             guard nextOffset <= extraFieldLength else { return nil }
             if headerID == ExtraFieldHeaderID.zip64ExtendedInformation.rawValue {
-                return Entry.ZIP64ExtendedInformation(data: data.subdata(in: offset..<nextOffset), fields: fields)
+                return Entry.ZIP64ExtendedInformation(data: data.subdata(in: offset ..< nextOffset), fields: fields)
             }
             offset = nextOffset
         }

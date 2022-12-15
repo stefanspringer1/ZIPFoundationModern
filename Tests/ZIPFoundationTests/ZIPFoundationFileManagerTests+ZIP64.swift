@@ -19,9 +19,9 @@ extension ZIPFoundationTests {
 
         var description: String {
             switch self {
-            case .failedToZipItem(let assetURL):
+            case let .failedToZipItem(assetURL):
                 return "Failed to zip item at URL: \(assetURL)."
-            case .failedToReadArchive(let fileArchiveURL):
+            case let .failedToReadArchive(fileArchiveURL):
                 return "Failed to read archive at URL: \(fileArchiveURL)."
             case .failedToUnzipItem:
                 return "Failed to unzip item."
@@ -102,11 +102,11 @@ extension ZIPFoundationTests {
     // MARK: - Helpers
 
     private func archiveZIP64Item(for testFunction: String, compressionMethod: CompressionMethod) throws {
-        self.mockIntMaxValues(int32Factor: 16, int16Factor: 16)
+        mockIntMaxValues(int32Factor: 16, int16Factor: 16)
         defer { self.resetIntMaxValues() }
-        let assetURL = self.resourceURL(for: testFunction, pathExtension: "png")
+        let assetURL = resourceURL(for: testFunction, pathExtension: "png")
         var fileArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
-        fileArchiveURL.appendPathComponent(self.archiveName(for: testFunction))
+        fileArchiveURL.appendPathComponent(archiveName(for: testFunction))
         do {
             try FileManager().zipItem(at: assetURL, to: fileArchiveURL, compressionMethod: compressionMethod)
         } catch {
@@ -121,8 +121,8 @@ extension ZIPFoundationTests {
 
     private func unarchiveZIP64Item(for testFunction: String) throws {
         let fileManager = FileManager()
-        let archive = self.archive(for: testFunction, mode: .read)
-        let destinationURL = self.createDirectory(for: testFunction)
+        let archive = archive(for: testFunction, mode: .read)
+        let destinationURL = createDirectory(for: testFunction)
         do {
             try fileManager.unzipItem(at: archive.url, to: destinationURL)
         } catch {

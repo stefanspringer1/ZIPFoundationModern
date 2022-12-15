@@ -13,14 +13,14 @@ import XCTest
 
 extension ZIPFoundationTests {
     func testExtractUncompressedFolderEntries() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         for entry in archive {
             do {
                 // Test extracting to memory
                 var checksum = try archive.extract(entry, bufferSize: 32, consumer: { _ in })
                 XCTAssert(entry.checksum == checksum)
                 // Test extracting to file
-                var fileURL = self.createDirectory(for: #function)
+                var fileURL = createDirectory(for: #function)
                 fileURL.appendPathComponent(entry.path)
                 checksum = try archive.extract(entry, to: fileURL)
                 XCTAssert(entry.checksum == checksum)
@@ -38,14 +38,14 @@ extension ZIPFoundationTests {
     }
 
     func testExtractCompressedFolderEntries() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         for entry in archive {
             do {
                 // Test extracting to memory
                 var checksum = try archive.extract(entry, bufferSize: 128, consumer: { _ in })
                 XCTAssert(entry.checksum == checksum)
                 // Test extracting to file
-                var fileURL = self.createDirectory(for: #function)
+                var fileURL = createDirectory(for: #function)
                 fileURL.appendPathComponent(entry.path)
                 checksum = try archive.extract(entry, to: fileURL)
                 XCTAssert(entry.checksum == checksum)
@@ -63,7 +63,7 @@ extension ZIPFoundationTests {
     }
 
     func testExtractUncompressedDataDescriptorArchive() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         for entry in archive {
             do {
                 let checksum = try archive.extract(entry, consumer: { _ in })
@@ -75,7 +75,7 @@ extension ZIPFoundationTests {
     }
 
     func testExtractCompressedDataDescriptorArchive() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         for entry in archive {
             do {
                 let checksum = try archive.extract(entry, consumer: { _ in })
@@ -88,7 +88,7 @@ extension ZIPFoundationTests {
 
     func testExtractPreferredEncoding() {
         let encoding = String.Encoding.utf8
-        let archive = self.archive(for: #function, mode: .read, preferredEncoding: encoding)
+        let archive = archive(for: #function, mode: .read, preferredEncoding: encoding)
         XCTAssertTrue(archive.checkIntegrity())
         let imageEntry = archive["data/pic👨‍👩‍👧‍👦🎂.jpg"]
         XCTAssertNotNil(imageEntry)
@@ -97,7 +97,7 @@ extension ZIPFoundationTests {
     }
 
     func testExtractMSDOSArchive() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         for entry in archive {
             do {
                 let checksum = try archive.extract(entry, consumer: { _ in })
@@ -109,7 +109,7 @@ extension ZIPFoundationTests {
     }
 
     func testExtractErrorConditions() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         XCTAssertNotNil(archive)
         guard let fileEntry = archive["testZipItem.png"] else {
             XCTFail("Failed to obtain test asset from archive.")
@@ -151,14 +151,14 @@ extension ZIPFoundationTests {
     }
 
     func testCorruptFileErrorConditions() throws {
-        let archiveURL = self.resourceURL(for: #function, pathExtension: "zip")
+        let archiveURL = resourceURL(for: #function, pathExtension: "zip")
         let destinationFile = try Handle(forUpdating: archiveURL)
 
         do {
             try destinationFile.seek(toOffset: 64)
             // We have to inject a large enough zeroes block to guarantee that libcompression
             // detects the failure when reading the stream
-            _ = try Data.write(chunk: Data(count: 512*1024), to: destinationFile)
+            _ = try Data.write(chunk: Data(count: 512 * 1024), to: destinationFile)
             try destinationFile.close()
             guard let archive = Archive(url: archiveURL, accessMode: .read) else {
                 XCTFail("Failed to read archive.")
@@ -177,7 +177,7 @@ extension ZIPFoundationTests {
     }
 
     func testCorruptSymbolicLinkErrorConditions() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         for entry in archive {
             do {
                 var tempFileURL = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -192,10 +192,10 @@ extension ZIPFoundationTests {
     }
 
     func testInvalidCompressionMethodErrorConditions() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         for entry in archive {
             do {
-                _ = try archive.extract(entry, consumer: { (_) in })
+                _ = try archive.extract(entry, consumer: { _ in })
             } catch let error as Archive.ArchiveError {
                 XCTAssert(error == .invalidCompressionMethod)
             } catch {
@@ -205,7 +205,7 @@ extension ZIPFoundationTests {
     }
 
     func testExtractEncryptedArchiveErrorConditions() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         var entriesRead = 0
         for _ in archive {
             entriesRead += 1
@@ -215,7 +215,7 @@ extension ZIPFoundationTests {
     }
 
     func testExtractInvalidBufferSizeErrorConditions() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         let entry = archive["text.txt"]!
         XCTAssertThrowsError(try archive.extract(entry, to: URL(fileURLWithPath: ""), bufferSize: 0, skipCRC32: true))
         let archive2 = self.archive(for: #function, mode: .read)
@@ -227,11 +227,11 @@ extension ZIPFoundationTests {
         // We had a logic error, where completion handlers for empty entries were not called
         // Ensure that this edge case works
         var didCallCompletion = false
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         guard let entry = archive["empty.txt"] else { XCTFail("Failed to extract entry."); return }
 
         do {
-            _ = try archive.extract(entry) { (data) in
+            _ = try archive.extract(entry) { data in
                 XCTAssertEqual(data.count, 0)
                 didCallCompletion = true
             }
@@ -242,12 +242,12 @@ extension ZIPFoundationTests {
     }
 
     func testExtractUncompressedEntryCancelation() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         guard let entry = archive["original"] else { XCTFail("Failed to extract entry."); return }
         let progress = archive.makeProgressForReading(entry)
         do {
             var readCount = 0
-            _ = try archive.extract(entry, bufferSize: 1, progress: progress) { (data) in
+            _ = try archive.extract(entry, bufferSize: 1, progress: progress) { data in
                 readCount += data.count
                 if readCount == 4 { progress.cancel() }
             }
@@ -260,12 +260,12 @@ extension ZIPFoundationTests {
     }
 
     func testExtractCompressedEntryCancelation() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         guard let entry = archive["random"] else { XCTFail("Failed to extract entry."); return }
         let progress = archive.makeProgressForReading(entry)
         do {
             var readCount = 0
-            _ = try archive.extract(entry, bufferSize: 256, progress: progress) { (data) in
+            _ = try archive.extract(entry, bufferSize: 256, progress: progress) { data in
                 readCount += data.count
                 if readCount == 512 { progress.cancel() }
             }
@@ -281,15 +281,15 @@ extension ZIPFoundationTests {
         let tempPath = NSTemporaryDirectory()
         var nonExistantURL = URL(fileURLWithPath: tempPath)
         nonExistantURL.appendPathComponent("invalid.path")
-        let archive = self.archive(for: #function, mode: .update)
+        let archive = archive(for: #function, mode: .update)
         XCTAssert(archive.totalUnitCountForAddingItem(at: nonExistantURL) == -1)
     }
 
     func testDetectEntryType() {
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         let expectedData: [String: Entry.EntryType] = [
             "META-INF/": .directory,
-            "META-INF/container.xml": .file
+            "META-INF/container.xml": .file,
         ]
         for entry in archive {
             XCTAssertEqual(entry.type, expectedData[entry.path])

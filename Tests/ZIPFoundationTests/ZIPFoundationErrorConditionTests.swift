@@ -55,7 +55,8 @@ extension ZIPFoundationTests {
                                             attributes: nil)
         XCTAssert(result == true)
         guard let invalidCentralDirArchive = Archive(url: invalidCentralDirArchiveURL,
-                                                     accessMode: .read) else {
+                                                     accessMode: .read)
+        else {
             XCTFail("Failed to read archive.")
             return
         }
@@ -63,7 +64,7 @@ extension ZIPFoundationTests {
             didFailToMakeIteratorAsExpected = false
         }
         XCTAssertTrue(didFailToMakeIteratorAsExpected)
-        let archive = self.archive(for: #function, mode: .read)
+        let archive = archive(for: #function, mode: .read)
         do {
             var invalidLocalFHArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
             invalidLocalFHArchiveURL.appendPathComponent(processInfo.globallyUniqueString)
@@ -74,7 +75,8 @@ extension ZIPFoundationTests {
             invalidLocalFHArchiveData[26] = 0xFF
             try invalidLocalFHArchiveData.write(to: invalidLocalFHArchiveURL)
             guard let invalidLocalFHArchive = Archive(url: invalidLocalFHArchiveURL,
-                                                      accessMode: .read) else {
+                                                      accessMode: .read)
+            else {
                 XCTFail("Failed to read local file header.")
                 return
             }
@@ -93,16 +95,18 @@ extension ZIPFoundationTests {
                                                 0x2A, 0x00, 0x00, 0x00, 0x00, 0x00]
         let invalidECDRCommentData = Data(ecdrInvalidCommentBytes)
         let invalidECDRComment = Archive.EndOfCentralDirectoryRecord(data: invalidECDRCommentData,
-                                                                     additionalDataProvider: {_ -> Data in
-                                                                        throw AdditionalDataError.invalidDataError })
+                                                                     additionalDataProvider: { _ -> Data in
+                                                                         throw AdditionalDataError.invalidDataError
+                                                                     })
         XCTAssertNil(invalidECDRComment)
         let ecdrInvalidCommentLengthBytes: [UInt8] = [0x50, 0x4B, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
                                                       0x01, 0x00, 0x01, 0x00, 0x5A, 0x00, 0x00, 0x00,
                                                       0x2A, 0x00, 0x00, 0x00, 0x00, 0x01]
         let invalidECDRCommentLengthData = Data(ecdrInvalidCommentLengthBytes)
         let invalidECDRCommentLength = Archive.EndOfCentralDirectoryRecord(data: invalidECDRCommentLengthData,
-                                                                           additionalDataProvider: {_ -> Data in
-                                                                            return Data() })
+                                                                           additionalDataProvider: { _ -> Data in
+                                                                               Data()
+                                                                           })
         XCTAssertNil(invalidECDRCommentLength)
     }
 }

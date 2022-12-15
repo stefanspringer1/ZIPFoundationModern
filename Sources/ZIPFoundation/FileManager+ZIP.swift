@@ -31,7 +31,8 @@ extension FileManager {
     /// - Throws: Throws an error if the source item does not exist or the destination URL is not writable.
     public func zipItem(at sourceURL: URL, to destinationURL: URL,
                         shouldKeepParent: Bool = true, compressionMethod: CompressionMethod = .none,
-                        progress: Progress? = nil) throws {
+                        progress: Progress? = nil) throws
+    {
         let fileManager = FileManager()
         guard fileManager.itemExists(at: sourceURL) else {
             throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: sourceURL.path])
@@ -44,14 +45,14 @@ extension FileManager {
         }
         let isDirectory = try FileManager.typeForItem(at: sourceURL) == .directory
         if isDirectory {
-            let subPaths = try self.subpathsOfDirectory(atPath: sourceURL.path)
+            let subPaths = try subpathsOfDirectory(atPath: sourceURL.path)
             var totalUnitCount = Int64(0)
-            if let progress = progress {
-                totalUnitCount = subPaths.reduce(Int64(0), {
+            if let progress {
+                totalUnitCount = subPaths.reduce(Int64(0)) {
                     let itemURL = sourceURL.appendingPathComponent($1)
                     let itemSize = archive.totalUnitCountForAddingItem(at: itemURL)
                     return $0 + itemSize
-                })
+                }
                 progress.totalUnitCount = totalUnitCount
             }
 
@@ -61,7 +62,7 @@ extension FileManager {
             for entryPath in subPaths {
                 let finalEntryPath = shouldKeepParent ? directoryPrefix + "/" + entryPath : entryPath
                 let finalBaseURL = shouldKeepParent ? sourceURL.deletingLastPathComponent() : sourceURL
-                if let progress = progress {
+                if let progress {
                     let itemURL = sourceURL.appendingPathComponent(entryPath)
                     let entryProgress = archive.makeProgressForAddingItem(at: itemURL)
                     progress.addChild(entryProgress, withPendingUnitCount: entryProgress.totalUnitCount)
@@ -90,7 +91,8 @@ extension FileManager {
     ///   - preferredEncoding: Encoding for entry paths. Overrides the encoding specified in the archive.
     /// - Throws: Throws an error if the source item does not exist or the destination URL is not writable.
     public func unzipItem(at sourceURL: URL, to destinationURL: URL, skipCRC32: Bool = false,
-                          progress: Progress? = nil, preferredEncoding: String.Encoding? = nil) throws {
+                          progress: Progress? = nil, preferredEncoding: String.Encoding? = nil) throws
+    {
         let fileManager = FileManager()
         guard fileManager.itemExists(at: sourceURL) else {
             throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: sourceURL.path])
@@ -100,7 +102,7 @@ extension FileManager {
         }
         // Defer extraction of symlinks until all files & directories have been created.
         // This is necessary because we can't create links to files that haven't been created yet.
-        let sortedEntries = archive.sorted { (left, right) -> Bool in
+        let sortedEntries = archive.sorted { left, right -> Bool in
             switch (left.type, right.type) {
             case (.directory, .file): return true
             case (.directory, .symlink): return true
@@ -109,8 +111,8 @@ extension FileManager {
             }
         }
         var totalUnitCount = Int64(0)
-        if let progress = progress {
-            totalUnitCount = sortedEntries.reduce(0, { $0 + archive.totalUnitCountForReading($1) })
+        if let progress {
+            totalUnitCount = sortedEntries.reduce(0) { $0 + archive.totalUnitCountForReading($1) }
             progress.totalUnitCount = totalUnitCount
         }
 
@@ -122,7 +124,7 @@ extension FileManager {
                                  userInfo: [NSFilePathErrorKey: entryURL.path])
             }
             let crc32: CRC32
-            if let progress = progress {
+            if let progress {
                 let entryProgress = archive.makeProgressForReading(entry)
                 progress.addChild(entryProgress, withPendingUnitCount: entryProgress.totalUnitCount)
                 crc32 = try archive.extract(entry, to: entryURL, skipCRC32: skipCRC32, progress: entryProgress)
@@ -148,12 +150,12 @@ extension FileManager {
         // would throw a `.fileReadNoSuchFile` false positive error.
         // For ZIP files it may be intended to archive "broken" symlinks because they might be
         // resolvable again when extracting the archive to a different destination.
-        return (try? url.checkResourceIsReachable()) == true
+        (try? url.checkResourceIsReachable()) == true
     }
 
     func createParentDirectoryStructure(for url: URL) throws {
         let parentDirectoryURL = url.deletingLastPathComponent()
-        try self.createDirectory(at: parentDirectoryURL, withIntermediateDirectories: true, attributes: nil)
+        try createDirectory(at: parentDirectoryURL, withIntermediateDirectories: true, attributes: nil)
     }
 
     class func attributes(from entry: Entry) -> [FileAttributeKey: Any] {
@@ -168,16 +170,17 @@ extension FileManager {
         guard let osType = Entry.OSType(rawValue: UInt(versionMadeBy >> 8)) else { return attributes }
 
         let externalFileAttributes = centralDirectoryStructure.externalFileAttributes
-        let permissions = self.permissions(for: externalFileAttributes, osType: osType, entryType: entryType)
+        let permissions = permissions(for: externalFileAttributes, osType: osType, entryType: entryType)
         attributes[.posixPermissions] = NSNumber(value: permissions)
         return attributes
     }
 
     class func permissions(for externalFileAttributes: UInt32, osType: Entry.OSType,
-                           entryType: Entry.EntryType) -> UInt16 {
+                           entryType: Entry.EntryType) -> UInt16
+    {
         switch osType {
         case .unix, .osx:
-            let permissions = mode_t(externalFileAttributes >> 16) & (~S_IFMT)
+            let permissions = mode_t(externalFileAttributes >> 16) & ~S_IFMT
             let defaultPermissions = entryType == .directory ? defaultDirectoryPermissions : defaultFilePermissions
             return permissions == 0 ? defaultPermissions : UInt16(permissions)
         default:
@@ -195,7 +198,7 @@ extension FileManager {
         case .symlink:
             typeInt = UInt16(S_IFLNK)
         }
-        var externalFileAttributes = UInt32(typeInt|UInt16(permissions))
+        var externalFileAttributes = UInt32(typeInt | UInt16(permissions))
         externalFileAttributes = (externalFileAttributes << 16)
         return externalFileAttributes
     }
@@ -218,12 +221,12 @@ extension FileManager {
         var fileStat = stat()
         lstat(entryFileSystemRepresentation, &fileStat)
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-        let modTimeSpec = fileStat.st_mtimespec
+            let modTimeSpec = fileStat.st_mtimespec
         #else
-        let modTimeSpec = fileStat.st_mtim
+            let modTimeSpec = fileStat.st_mtim
         #endif
 
-        let timeStamp = TimeInterval(modTimeSpec.tv_sec) + TimeInterval(modTimeSpec.tv_nsec)/1000000000.0
+        let timeStamp = TimeInterval(modTimeSpec.tv_sec) + TimeInterval(modTimeSpec.tv_nsec) / 1_000_000_000.0
         let modDate = Date(timeIntervalSince1970: timeStamp)
         return modDate
     }
@@ -261,13 +264,13 @@ extension Date {
         msdosDateTime <<= 16
         msdosDateTime |= Int(dateTime.1)
         var unixTime = tm()
-        unixTime.tm_sec = Int32((msdosDateTime&31)*2)
-        unixTime.tm_min = Int32((msdosDateTime>>5)&63)
-        unixTime.tm_hour = Int32((Int(dateTime.1)>>11)&31)
-        unixTime.tm_mday = Int32((msdosDateTime>>16)&31)
-        unixTime.tm_mon = Int32((msdosDateTime>>21)&15)
+        unixTime.tm_sec = Int32((msdosDateTime & 31) * 2)
+        unixTime.tm_min = Int32((msdosDateTime >> 5) & 63)
+        unixTime.tm_hour = Int32((Int(dateTime.1) >> 11) & 31)
+        unixTime.tm_mday = Int32((msdosDateTime >> 16) & 31)
+        unixTime.tm_mon = Int32((msdosDateTime >> 21) & 15)
         unixTime.tm_mon -= 1 // UNIX time struct month entries are zero based.
-        unixTime.tm_year = Int32(1980+(msdosDateTime>>25))
+        unixTime.tm_year = Int32(1980 + (msdosDateTime >> 25))
         unixTime.tm_year -= 1900 // UNIX time structs count in "years since 1900".
         let time = timegm(&unixTime)
         self = Date(timeIntervalSince1970: TimeInterval(time))
@@ -278,7 +281,7 @@ extension Date {
     }
 
     var fileModificationDate: UInt16 {
-        var time = time_t(self.timeIntervalSince1970)
+        var time = time_t(timeIntervalSince1970)
         guard let unixTime = gmtime(&time) else {
             return 0
         }
@@ -288,18 +291,18 @@ extension Date {
         year = year <= 2099 ? year : 2099
         let month = unixTime.pointee.tm_mon + 1 // UNIX time struct month entries are zero based.
         let day = unixTime.pointee.tm_mday
-        return (UInt16)(day + ((month) * 32) +  ((year - 1980) * 512))
+        return (UInt16)(day + (month * 32) + ((year - 1980) * 512))
     }
 
     var fileModificationTime: UInt16 {
-        var time = time_t(self.timeIntervalSince1970)
+        var time = time_t(timeIntervalSince1970)
         guard let unixTime = gmtime(&time) else {
             return 0
         }
         let hour = unixTime.pointee.tm_hour
         let minute = unixTime.pointee.tm_min
         let second = unixTime.pointee.tm_sec
-        return (UInt16)((second/2) + (minute * 32) + (hour * 2048))
+        return (UInt16)((second / 2) + (minute * 32) + (hour * 2048))
     }
 }
 
@@ -307,6 +310,6 @@ public extension URL {
     func isContained(in parentDirectoryURL: URL) -> Bool {
         // Ensure this URL is contained in the passed in URL
         let parentDirectoryURL = URL(fileURLWithPath: parentDirectoryURL.path, isDirectory: true).standardized
-        return self.standardized.absoluteString.hasPrefix(parentDirectoryURL.absoluteString)
+        return standardized.absoluteString.hasPrefix(parentDirectoryURL.absoluteString)
     }
 }

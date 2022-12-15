@@ -13,8 +13,8 @@ import XCTest
 
 extension ZIPFoundationTests {
     func testPerformanceWriteUncompressed() {
-        let archive = self.archive(for: #function, mode: .create)
-        let size = 1024*1024*20
+        let archive = archive(for: #function, mode: .create)
+        let size = 1024 * 1024 * 20
         let data = Data.makeRandomData(size: size)
         let entryName = ProcessInfo.processInfo.globallyUniqueString
         measure {
@@ -22,11 +22,11 @@ extension ZIPFoundationTests {
                 try archive.addEntry(with: entryName, type: .file,
                                      uncompressedSize: Int64(size),
                                      compressionMethod: .none,
-                                     provider: { (position, bufferSize) -> Data in
-                                        let upperBound = Swift.min(size, Int(position) + bufferSize)
-                                        let range = Range(uncheckedBounds: (lower: Int(position), upper: upperBound))
-                                        return data.subdata(in: range)
-                })
+                                     provider: { position, bufferSize -> Data in
+                                         let upperBound = Swift.min(size, Int(position) + bufferSize)
+                                         let range = Range(uncheckedBounds: (lower: Int(position), upper: upperBound))
+                                         return data.subdata(in: range)
+                                     })
             } catch {
                 XCTFail("Failed to add large entry to uncompressed archive with error : \(error)")
             }
@@ -34,19 +34,19 @@ extension ZIPFoundationTests {
     }
 
     func testPerformanceReadUncompressed() {
-        let archive = self.archive(for: #function, mode: .create)
-        let size = 1024*1024*20
+        let archive = archive(for: #function, mode: .create)
+        let size = 1024 * 1024 * 20
         let data = Data.makeRandomData(size: size)
         let entryName = ProcessInfo.processInfo.globallyUniqueString
         do {
             try archive.addEntry(with: entryName, type: .file,
                                  uncompressedSize: Int64(size),
                                  compressionMethod: .none,
-                                 provider: { (position, bufferSize) -> Data in
-                                    let upperBound = Swift.min(size, Int(position) + bufferSize)
-                                    let range = Range(uncheckedBounds: (lower: Int(position), upper: upperBound))
-                                    return data.subdata(in: range)
-            })
+                                 provider: { position, bufferSize -> Data in
+                                     let upperBound = Swift.min(size, Int(position) + bufferSize)
+                                     let range = Range(uncheckedBounds: (lower: Int(position), upper: upperBound))
+                                     return data.subdata(in: range)
+                                 })
         } catch {
             XCTFail("Failed to add large entry to uncompressed archive with error : \(error)")
         }
@@ -56,7 +56,7 @@ extension ZIPFoundationTests {
                     XCTFail("Failed to read entry.")
                     return
                 }
-                _ = try archive.extract(entry, consumer: {_ in })
+                _ = try archive.extract(entry, consumer: { _ in })
             } catch {
                 XCTFail("Failed to read large entry from uncompressed archive")
             }
@@ -64,8 +64,8 @@ extension ZIPFoundationTests {
     }
 
     func testPerformanceWriteCompressed() {
-        let archive = self.archive(for: #function, mode: .create)
-        let size = 1024*1024*20
+        let archive = archive(for: #function, mode: .create)
+        let size = 1024 * 1024 * 20
         let data = Data.makeRandomData(size: size)
         let entryName = ProcessInfo.processInfo.globallyUniqueString
         measure {
@@ -73,11 +73,11 @@ extension ZIPFoundationTests {
                 try archive.addEntry(with: entryName, type: .file,
                                      uncompressedSize: Int64(size),
                                      compressionMethod: .deflate,
-                                     provider: { (position, bufferSize) -> Data in
-                                        let upperBound = Swift.min(size, Int(position) + bufferSize)
-                                        let range = Range(uncheckedBounds: (lower: Int(position), upper: upperBound))
-                                        return data.subdata(in: range)
-                })
+                                     provider: { position, bufferSize -> Data in
+                                         let upperBound = Swift.min(size, Int(position) + bufferSize)
+                                         let range = Range(uncheckedBounds: (lower: Int(position), upper: upperBound))
+                                         return data.subdata(in: range)
+                                     })
             } catch {
                 XCTFail("Failed to add large entry to compressed archive with error : \(error)")
             }
@@ -85,19 +85,19 @@ extension ZIPFoundationTests {
     }
 
     func testPerformanceReadCompressed() {
-        let archive = self.archive(for: #function, mode: .create)
-        let size = 1024*1024*20
+        let archive = archive(for: #function, mode: .create)
+        let size = 1024 * 1024 * 20
         let data = Data.makeRandomData(size: size)
         let entryName = ProcessInfo.processInfo.globallyUniqueString
         do {
             try archive.addEntry(with: entryName, type: .file,
                                  uncompressedSize: Int64(size),
                                  compressionMethod: .deflate,
-                                 provider: { (position, bufferSize) -> Data in
-                                    let upperBound = Swift.min(size, Int(position) + bufferSize)
-                                    let range = Range(uncheckedBounds: (lower: Int(position), upper: upperBound))
-                                    return data.subdata(in: range)
-            })
+                                 provider: { position, bufferSize -> Data in
+                                     let upperBound = Swift.min(size, Int(position) + bufferSize)
+                                     let range = Range(uncheckedBounds: (lower: Int(position), upper: upperBound))
+                                     return data.subdata(in: range)
+                                 })
         } catch {
             XCTFail("Failed to add large entry to compressed archive with error : \(error)")
         }
@@ -107,7 +107,7 @@ extension ZIPFoundationTests {
                     XCTFail("Failed to read entry.")
                     return
                 }
-                _ = try archive.extract(entry, consumer: {_ in })
+                _ = try archive.extract(entry, consumer: { _ in })
             } catch {
                 XCTFail("Failed to read large entry from compressed archive")
             }
@@ -115,7 +115,7 @@ extension ZIPFoundationTests {
     }
 
     func testPerformanceCRC32() {
-        let size = 1024*1024*20
+        let size = 1024 * 1024 * 20
         let data = Data.makeRandomData(size: size)
         measure {
             _ = data.crc32(checksum: 0)

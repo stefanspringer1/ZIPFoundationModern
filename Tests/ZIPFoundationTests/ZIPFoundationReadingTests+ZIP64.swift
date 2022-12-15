@@ -23,9 +23,9 @@ extension ZIPFoundationTests {
 
         var description: String {
             switch self {
-            case .failedToReadEntry(let name):
+            case let .failedToReadEntry(name):
                 return "Failed to read entry: \(name)."
-            case .failedToExtractEntry(let type):
+            case let .failedToExtractEntry(type):
                 return "Failed to extract item to \(type)"
             }
         }
@@ -58,7 +58,7 @@ extension ZIPFoundationTests {
     // MARK: - Helpers
 
     private func extractEntryFromZIP64Archive(for testFunction: String, reservedFileName: String? = nil) throws {
-        let archive = self.archive(for: testFunction, mode: .read)
+        let archive = archive(for: testFunction, mode: .read)
         let fileName = reservedFileName ?? testFunction.replacingOccurrences(of: "()", with: ".png")
         guard let entry = archive[fileName] else {
             throw ZIP64ReadingTestsError.failedToReadEntry(name: fileName)
@@ -72,7 +72,7 @@ extension ZIPFoundationTests {
         }
         do {
             // Test extracting to file
-            var fileURL = self.createDirectory(for: testFunction)
+            var fileURL = createDirectory(for: testFunction)
             fileURL.appendPathComponent(entry.path)
             let checksum = try archive.extract(entry, to: fileURL)
             XCTAssert(entry.checksum == checksum)

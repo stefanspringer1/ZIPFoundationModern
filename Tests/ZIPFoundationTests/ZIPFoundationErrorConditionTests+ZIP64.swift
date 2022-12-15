@@ -13,7 +13,7 @@ import XCTest
 
 extension ZIPFoundationTests {
     func testWriteEOCDWithTooLargeSizeOfCentralDirectory() {
-        let archive = self.archive(for: #function, mode: .create)
+        let archive = archive(for: #function, mode: .create)
         var didCatchExpectedError = false
         archive.zip64EndOfCentralDirectory = makeMockZIP64EndOfCentralDirectory(sizeOfCentralDirectory: .max,
                                                                                 numberOfEntries: 0)
@@ -32,7 +32,7 @@ extension ZIPFoundationTests {
     }
 
     func testWriteEOCDWithTooLargeCentralDirectoryOffset() {
-        let archive = self.archive(for: #function, mode: .create)
+        let archive = archive(for: #function, mode: .create)
         var didCatchExpectedError = false
         archive.zip64EndOfCentralDirectory = makeMockZIP64EndOfCentralDirectory(sizeOfCentralDirectory: 0,
                                                                                 numberOfEntries: .max)
@@ -53,7 +53,8 @@ extension ZIPFoundationTests {
     // MARK: - Helper
 
     private func makeMockZIP64EndOfCentralDirectory(sizeOfCentralDirectory: UInt64, numberOfEntries: UInt64)
-    -> Archive.ZIP64EndOfCentralDirectory {
+        -> Archive.ZIP64EndOfCentralDirectory
+    {
         let record = Archive.ZIP64EndOfCentralDirectoryRecord(sizeOfZIP64EndOfCentralDirectoryRecord: UInt64(44),
                                                               versionMadeBy: UInt16(789),
                                                               versionNeededToExtract: Archive.Version.v45.rawValue,
@@ -70,12 +71,12 @@ extension ZIPFoundationTests {
     }
 
     private func makeMockCentralDirectory() -> Entry.CentralDirectoryStructure? {
-        let cdsBytes: [UInt8] = [0x50, 0x4b, 0x01, 0x02, 0x1e, 0x15, 0x14, 0x00,
-                                 0x08, 0x08, 0x08, 0x00, 0xab, 0x85, 0x77, 0x47,
+        let cdsBytes: [UInt8] = [0x50, 0x4B, 0x01, 0x02, 0x1E, 0x15, 0x14, 0x00,
+                                 0x08, 0x08, 0x08, 0x00, 0xAB, 0x85, 0x77, 0x47,
                                  0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                 0xb0, 0x11, 0x00, 0x00, 0x00, 0x00]
+                                 0xB0, 0x11, 0x00, 0x00, 0x00, 0x00]
         guard let cds = Entry.CentralDirectoryStructure(data: Data(cdsBytes),
                                                         additionalDataProvider: { count -> Data in
                                                             guard let pathData = "/".data(using: .utf8) else {
@@ -83,7 +84,8 @@ extension ZIPFoundationTests {
                                                             }
                                                             XCTAssert(count == pathData.count)
                                                             return pathData
-                                                        }) else {
+                                                        })
+        else {
             XCTFail("Failed to read central directory structure.")
             return nil
         }

@@ -11,7 +11,7 @@
 import Foundation
 
 /// The default chunk size when reading entry data from an archive.
-public let defaultReadChunkSize = Int(16*1024)
+public let defaultReadChunkSize = Int(16 * 1024)
 /// The default chunk size when writing entry data to an archive.
 public let defaultWriteChunkSize = defaultReadChunkSize
 /// The default permissions for newly added entries.
@@ -21,10 +21,10 @@ public let defaultDirectoryPermissions = UInt16(0o755)
 let defaultPOSIXBufferSize = defaultReadChunkSize
 let defaultDirectoryUnitCount = Int64(1)
 let minEndOfCentralDirectoryOffset = Int64(22)
-let endOfCentralDirectoryStructSignature = 0x06054b50
-let localFileHeaderStructSignature = 0x04034b50
-let dataDescriptorStructSignature = 0x08074b50
-let centralDirectoryStructSignature = 0x02014b50
+let endOfCentralDirectoryStructSignature = 0x0605_4B50
+let localFileHeaderStructSignature = 0x0403_4B50
+let dataDescriptorStructSignature = 0x0807_4B50
+let centralDirectoryStructSignature = 0x0201_4B50
 let memoryURLScheme = "memory"
 
 /// A sequence of uncompressed or compressed ZIP entries.
@@ -135,10 +135,12 @@ public final class Archive: Sequence {
         zip64EndOfCentralDirectory?.record.totalNumberOfEntriesInCentralDirectory
             ?? UInt64(endOfCentralDirectoryRecord.totalNumberOfEntriesInCentralDirectory)
     }
+
     var sizeOfCentralDirectory: UInt64 {
         zip64EndOfCentralDirectory?.record.sizeOfCentralDirectory
             ?? UInt64(endOfCentralDirectoryRecord.sizeOfCentralDirectory)
     }
+
     var offsetToStartOfCentralDirectory: UInt64 {
         zip64EndOfCentralDirectory?.record.offsetToStartOfCentralDirectory
             ?? UInt64(endOfCentralDirectoryRecord.offsetToStartOfCentralDirectory)
@@ -162,14 +164,14 @@ public final class Archive: Sequence {
     ///   - The file URL _must_ point to an existing file for `AccessMode.update`.
     public init?(url: URL, accessMode mode: AccessMode, preferredEncoding: String.Encoding? = nil) {
         self.url = url
-        self.accessMode = mode
+        accessMode = mode
         self.preferredEncoding = preferredEncoding
         guard let config = Archive.makeBackingConfiguration(for: url, mode: mode) else {
             return nil
         }
-        self.archiveFile = config.file
-        self.endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
-        self.zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
+        archiveFile = config.file
+        endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
+        zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
 //        setvbuf(self.archiveFile, nil, _IOFBF, Int(defaultPOSIXBufferSize))
     }
 
@@ -191,17 +193,18 @@ public final class Archive: Sequence {
     ///   - The backing `data` _must_ be empty (or omitted) for `AccessMode.create`.
     public init?(data: Data = Data(), accessMode mode: AccessMode, preferredEncoding: String.Encoding? = nil) {
         guard let url = URL(string: "\(memoryURLScheme)://"),
-            let config = Archive.makeBackingConfiguration(for: data, mode: mode) else {
+              let config = Archive.makeBackingConfiguration(for: data, mode: mode)
+        else {
             return nil
         }
 
         self.url = url
-        self.accessMode = mode
+        accessMode = mode
         self.preferredEncoding = preferredEncoding
-        self.archiveFile = config.file
-        self.memoryFile = config.memoryFile
-        self.endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
-        self.zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
+        archiveFile = config.file
+        memoryFile = config.memoryFile
+        endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
+        zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
     }
 
     deinit {
@@ -209,14 +212,15 @@ public final class Archive: Sequence {
     }
 
     public func makeIterator() -> AnyIterator<Entry> {
-        let totalNumberOfEntriesInCD = self.totalNumberOfEntriesInCentralDirectory
-        var directoryIndex = self.offsetToStartOfCentralDirectory
+        let totalNumberOfEntriesInCD = totalNumberOfEntriesInCentralDirectory
+        var directoryIndex = offsetToStartOfCentralDirectory
         var index = 0
         return AnyIterator {
             guard index < totalNumberOfEntriesInCD else { return nil }
             guard let centralDirStruct: CentralDirectoryStructure = Data.readStruct(from: self.archiveFile,
-                                                                                    at: directoryIndex) else {
-                                                                                        return nil
+                                                                                    at: directoryIndex)
+            else {
+                return nil
             }
             let offset = UInt64(centralDirStruct.effectiveRelativeOffsetOfLocalHeader)
             guard let localFileHeader: LocalFileHeader = Data.readStruct(from: self.archiveFile,
@@ -258,20 +262,21 @@ public final class Archive: Sequence {
     /// - Returns: An `Entry` with the given `path`. Otherwise, `nil`.
     public subscript(path: String) -> Entry? {
         if let encoding = preferredEncoding {
-            return self.first { $0.path(using: encoding) == path }
+            return first { $0.path(using: encoding) == path }
         }
-        return self.first { $0.path == path }
+        return first { $0.path == path }
     }
 
     // MARK: - Helpers
 
     static func scanForEndOfCentralDirectoryRecord(in file: Handle)
-        -> EndOfCentralDirectoryStructure? {
+        -> EndOfCentralDirectoryStructure?
+    {
         var eocdOffset: UInt64 = 0
         var index = minEndOfCentralDirectoryOffset
         _ = try? file.seekToEnd()
         let archiveLength = Int64((try? file.offset()) ?? 0)
-        while eocdOffset == 0 && index <= archiveLength {
+        while eocdOffset == 0, index <= archiveLength {
             try? file.seek(toOffset: UInt64(archiveLength - index))
             let potentialDirectoryEndTag: UInt32 = (try? file.read(upToCount: MemoryLayout<UInt32>.size))?.uint32 ?? 0
             if potentialDirectoryEndTag == UInt32(endOfCentralDirectoryStructSignature) {
@@ -288,7 +293,8 @@ public final class Archive: Sequence {
     }
 
     private static func scanForZIP64EndOfCentralDirectory(in file: Handle, eocdOffset: UInt64)
-        -> ZIP64EndOfCentralDirectory? {
+        -> ZIP64EndOfCentralDirectory?
+    {
         guard UInt64(ZIP64EndOfCentralDirectoryLocator.size) < eocdOffset else {
             return nil
         }
@@ -299,7 +305,8 @@ public final class Archive: Sequence {
         }
         let recordOffset = locatorOffset - UInt64(ZIP64EndOfCentralDirectoryRecord.size)
         guard let locator: ZIP64EndOfCentralDirectoryLocator = Data.readStruct(from: file, at: locatorOffset),
-              let record: ZIP64EndOfCentralDirectoryRecord = Data.readStruct(from: file, at: recordOffset) else {
+              let record: ZIP64EndOfCentralDirectoryRecord = Data.readStruct(from: file, at: recordOffset)
+        else {
             return nil
         }
         return ZIP64EndOfCentralDirectory(record: record, locator: locator)
@@ -308,61 +315,62 @@ public final class Archive: Sequence {
 
 extension Archive.EndOfCentralDirectoryRecord {
     var data: Data {
-        var endOfCDSignature = self.endOfCentralDirectorySignature
-        var numberOfDisk = self.numberOfDisk
-        var numberOfDiskStart = self.numberOfDiskStart
-        var totalNumberOfEntriesOnDisk = self.totalNumberOfEntriesOnDisk
-        var totalNumberOfEntriesInCD = self.totalNumberOfEntriesInCentralDirectory
-        var sizeOfCentralDirectory = self.sizeOfCentralDirectory
-        var offsetToStartOfCD = self.offsetToStartOfCentralDirectory
-        var zipFileCommentLength = self.zipFileCommentLength
+        var endOfCDSignature = endOfCentralDirectorySignature
+        var numberOfDisk = numberOfDisk
+        var numberOfDiskStart = numberOfDiskStart
+        var totalNumberOfEntriesOnDisk = totalNumberOfEntriesOnDisk
+        var totalNumberOfEntriesInCD = totalNumberOfEntriesInCentralDirectory
+        var sizeOfCentralDirectory = sizeOfCentralDirectory
+        var offsetToStartOfCD = offsetToStartOfCentralDirectory
+        var zipFileCommentLength = zipFileCommentLength
         var data = Data()
-        withUnsafePointer(to: &endOfCDSignature, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        withUnsafePointer(to: &numberOfDisk, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        withUnsafePointer(to: &numberOfDiskStart, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        withUnsafePointer(to: &totalNumberOfEntriesOnDisk, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        withUnsafePointer(to: &totalNumberOfEntriesInCD, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        withUnsafePointer(to: &sizeOfCentralDirectory, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        withUnsafePointer(to: &offsetToStartOfCD, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        withUnsafePointer(to: &zipFileCommentLength, { data.append(UnsafeBufferPointer(start: $0, count: 1))})
-        data.append(self.zipFileCommentData)
+        withUnsafePointer(to: &endOfCDSignature) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &numberOfDisk) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &numberOfDiskStart) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &totalNumberOfEntriesOnDisk) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &totalNumberOfEntriesInCD) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &sizeOfCentralDirectory) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &offsetToStartOfCD) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        withUnsafePointer(to: &zipFileCommentLength) { data.append(UnsafeBufferPointer(start: $0, count: 1)) }
+        data.append(zipFileCommentData)
         return data
     }
 
     init?(data: Data, additionalDataProvider provider: (Int) throws -> Data) {
         guard data.count == Archive.EndOfCentralDirectoryRecord.size else { return nil }
         guard data.scanValue(start: 0) == endOfCentralDirectorySignature else { return nil }
-        self.numberOfDisk = data.scanValue(start: 4)
-        self.numberOfDiskStart = data.scanValue(start: 6)
-        self.totalNumberOfEntriesOnDisk = data.scanValue(start: 8)
-        self.totalNumberOfEntriesInCentralDirectory = data.scanValue(start: 10)
-        self.sizeOfCentralDirectory = data.scanValue(start: 12)
-        self.offsetToStartOfCentralDirectory = data.scanValue(start: 16)
-        self.zipFileCommentLength = data.scanValue(start: 20)
-        guard let commentData = try? provider(Int(self.zipFileCommentLength)) else { return nil }
-        guard commentData.count == Int(self.zipFileCommentLength) else { return nil }
-        self.zipFileCommentData = commentData
+        numberOfDisk = data.scanValue(start: 4)
+        numberOfDiskStart = data.scanValue(start: 6)
+        totalNumberOfEntriesOnDisk = data.scanValue(start: 8)
+        totalNumberOfEntriesInCentralDirectory = data.scanValue(start: 10)
+        sizeOfCentralDirectory = data.scanValue(start: 12)
+        offsetToStartOfCentralDirectory = data.scanValue(start: 16)
+        zipFileCommentLength = data.scanValue(start: 20)
+        guard let commentData = try? provider(Int(zipFileCommentLength)) else { return nil }
+        guard commentData.count == Int(zipFileCommentLength) else { return nil }
+        zipFileCommentData = commentData
     }
 
     init(record: Archive.EndOfCentralDirectoryRecord,
          numberOfEntriesOnDisk: UInt16,
          numberOfEntriesInCentralDirectory: UInt16,
          updatedSizeOfCentralDirectory: UInt32,
-         startOfCentralDirectory: UInt32) {
-        self.numberOfDisk = record.numberOfDisk
-        self.numberOfDiskStart = record.numberOfDiskStart
-        self.totalNumberOfEntriesOnDisk = numberOfEntriesOnDisk
-        self.totalNumberOfEntriesInCentralDirectory = numberOfEntriesInCentralDirectory
-        self.sizeOfCentralDirectory = updatedSizeOfCentralDirectory
-        self.offsetToStartOfCentralDirectory = startOfCentralDirectory
-        self.zipFileCommentLength = record.zipFileCommentLength
-        self.zipFileCommentData = record.zipFileCommentData
+         startOfCentralDirectory: UInt32)
+    {
+        numberOfDisk = record.numberOfDisk
+        numberOfDiskStart = record.numberOfDiskStart
+        totalNumberOfEntriesOnDisk = numberOfEntriesOnDisk
+        totalNumberOfEntriesInCentralDirectory = numberOfEntriesInCentralDirectory
+        sizeOfCentralDirectory = updatedSizeOfCentralDirectory
+        offsetToStartOfCentralDirectory = startOfCentralDirectory
+        zipFileCommentLength = record.zipFileCommentLength
+        zipFileCommentData = record.zipFileCommentData
     }
 }
 
 extension Data {
     var uint32: UInt32 {
-        return UInt32(littleEndian: self[0..<4].withUnsafeBytes { bytes in
+        UInt32(littleEndian: self[0 ..< 4].withUnsafeBytes { bytes in
             bytes.load(as: UInt32.self)
         })
     }

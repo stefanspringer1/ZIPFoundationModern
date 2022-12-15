@@ -11,11 +11,11 @@
 import Foundation
 
 extension URL {
-
     static func temporaryReplacementDirectoryURL(for archive: Archive) -> URL {
         if archive.url.isFileURL,
            let tempDir = try? FileManager().url(for: .itemReplacementDirectory, in: .userDomainMask,
-                                                appropriateFor: archive.url, create: true) {
+                                                appropriateFor: archive.url, create: true)
+        {
             return tempDir
         }
 

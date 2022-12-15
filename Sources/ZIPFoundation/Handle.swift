@@ -88,9 +88,9 @@ public class Handle {
         }
     }
 
-    public func write<T>(contentsOf data: T) throws where T : DataProtocol {
+    public func write(contentsOf data: some DataProtocol) throws {
         guard writable else { throw Data.DataError.unwritableFile }
-        
+
         switch backing {
         case let .file(file):
             try file.write(contentsOf: data)
