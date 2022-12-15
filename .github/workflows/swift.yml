@@ -29,3 +29,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: swift test -c release -Xswiftc -enable-testing
+  
+  Windows:
+    strategy:
+      matrix:
+        tag: ['5.7.1']
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: sushichop/gha-swift-env@v1
+        with:
+          swift-version: ${{ matrix.tag }}
+      - run: swift test -c release -Xswiftc -enable-testing
