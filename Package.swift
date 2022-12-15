@@ -23,15 +23,18 @@ import PackageDescription
                 .define("_LARGEFILE64_SOURCE", to: "1"),
                 .define("_FILE_OFFSET_BITS", to: "64"),
                 .define("_LFS64_LARGEFILE", to: "1"),
-                .define("_GNU_SOURCE", to: "1", .when(platforms: [.linux, .android])),
                 .define("_CRT_SECURE_NO_DEPRECATE", .when(platforms: [.windows])),
                 .define("_CRT_NONSTDC_NO_DEPRECATE", .when(platforms: [.windows])),
-            ]),
+            ]
+        ),
         .target(name: "ZIPFoundation", dependencies: ["CZLib"]),
         .testTarget(name: "ZIPFoundationTests",
                     dependencies: ["ZIPFoundation"],
                     resources: [
                         .process("Resources"),
+                    ],
+                    cSettings: [
+                        .define("_GNU_SOURCE", to: "1", .when(platforms: [.linux, .android])),
                     ]),
     ]
 #endif
