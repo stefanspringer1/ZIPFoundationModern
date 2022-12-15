@@ -10,6 +10,10 @@
 
 import Foundation
 
+#if canImport(CZLib)
+import CZLib
+#endif
+
 extension Archive {
     var isMemoryArchive: Bool { url.scheme == memoryURLScheme }
 }
