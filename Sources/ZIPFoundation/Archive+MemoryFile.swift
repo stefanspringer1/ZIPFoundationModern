@@ -10,6 +10,10 @@
 
 import Foundation
 
+#if canImport(Glibc)
+import Glibc
+#endif
+
 extension Archive {
     var isMemoryArchive: Bool { url.scheme == memoryURLScheme }
 }
