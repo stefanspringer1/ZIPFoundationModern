@@ -15,7 +15,10 @@ let targets: [Target] = [
     .systemLibrary(name: "CZLib", pkgConfig: "zlib", providers: [.brew(["zlib"]), .apt(["zlib"])]),
     .target(name: "ZIPFoundation", dependencies: ["CZLib"], cSettings: [.define("_GNU_SOURCE", to: "1")]),
     .testTarget(name: "ZIPFoundationTests",
-                dependencies: ["ZIPFoundation"])
+                dependencies: ["ZIPFoundation"],
+                resources: [
+                    .process("Resources")
+                ])
 ]
 #endif
 

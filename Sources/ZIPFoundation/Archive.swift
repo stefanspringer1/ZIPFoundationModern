@@ -273,7 +273,7 @@ public final class Archive: Sequence {
         let archiveLength = Int64((try? file.offset()) ?? 0)
         while eocdOffset == 0 && index <= archiveLength {
             try? file.seek(toOffset: UInt64(archiveLength - index))
-            var potentialDirectoryEndTag: UInt32 = (try? file.read(upToCount: MemoryLayout<UInt32>.size))?.uint32 ?? 0
+            let potentialDirectoryEndTag: UInt32 = (try? file.read(upToCount: MemoryLayout<UInt32>.size))?.uint32 ?? 0
             if potentialDirectoryEndTag == UInt32(endOfCentralDirectoryStructSignature) {
                 eocdOffset = UInt64(archiveLength - index)
                 guard let eocd: EndOfCentralDirectoryRecord = Data.readStruct(from: file, at: eocdOffset) else {
