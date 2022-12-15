@@ -60,6 +60,7 @@ extension ZIPFoundationTests {
 
     func testZipItemErrorConditions() {
         let fileManager = FileManager()
+
         do {
             try fileManager.zipItem(at: URL(fileURLWithPath: "/nothing"), to: URL(fileURLWithPath: "/nowhere"))
             XCTFail("Error when zipping non-existant archive not raised")
@@ -67,18 +68,24 @@ extension ZIPFoundationTests {
         } catch {
             XCTFail("Unexpected error while trying to zip via fileManager.")
         }
+
         do {
             try fileManager.zipItem(at: URL(fileURLWithPath: NSTemporaryDirectory()),
                                     to: URL(fileURLWithPath: NSTemporaryDirectory()))
             XCTFail("Error when zipping directory to already existing destination not raised")
         } catch let error as CocoaError { XCTAssert(error.code == CocoaError.fileWriteFileExists)
         } catch { XCTFail("Unexpected error while trying to zip via fileManager.") }
+
         do {
             let unwritableURL = URL(fileURLWithPath: "/test.zip")
-            try fileManager.zipItem(at: URL(fileURLWithPath: NSTemporaryDirectory()), to: unwritableURL)
-            XCTFail("Error when zipping to non writable archive not raised")
+            // dubious permissions test, let's check if we could write the file using FileManager first
+            if !fileManager.isWritableFile(atPath: unwritableURL.path) {
+                try fileManager.zipItem(at: URL(fileURLWithPath: NSTemporaryDirectory()), to: unwritableURL)
+                XCTFail("Error when zipping to non writable archive not raised")
+            }
         } catch let error as Archive.ArchiveError { XCTAssert(error == .unwritableArchive)
         } catch { XCTFail("Unexpected error while trying to zip via fileManager.") }
+
         var directoryArchiveURL = ZIPFoundationTests.tempZipDirectoryURL
         let pathComponent = pathComponent(for: #function) + "Directory"
         directoryArchiveURL.appendPathComponent(pathComponent)
