@@ -43,6 +43,8 @@ extension Archive {
                                         endOfCentralDirectoryRecord: eocdRecord,
                                         zip64EndOfCentralDirectory: zip64EOCD)
         case .create:
+            guard FileManager.default.isWritableFile(atPath: url.path) else { return nil }
+
             let endOfCentralDirectoryRecord = EndOfCentralDirectoryRecord(numberOfDisk: 0, numberOfDiskStart: 0,
                                                                           totalNumberOfEntriesOnDisk: 0,
                                                                           totalNumberOfEntriesInCentralDirectory: 0,
@@ -55,6 +57,8 @@ extension Archive {
             } catch { return nil }
             fallthrough
         case .update:
+            guard FileManager.default.isWritableFile(atPath: url.path) else { return nil }
+
             guard let archiveFile = try? Handle(forUpdating: url),
                   let (eocdRecord, zip64EOCD) = Archive.scanForEndOfCentralDirectoryRecord(in: archiveFile)
             else {

@@ -78,11 +78,8 @@ extension ZIPFoundationTests {
 
         do {
             let unwritableURL = URL(fileURLWithPath: "/test.zip")
-            // dubious permissions test, let's check if we could write the file using FileManager first
-            if !fileManager.isWritableFile(atPath: unwritableURL.path) {
-                try fileManager.zipItem(at: URL(fileURLWithPath: NSTemporaryDirectory()), to: unwritableURL)
-                XCTFail("Error when zipping to non writable archive not raised")
-            }
+            try fileManager.zipItem(at: URL(fileURLWithPath: NSTemporaryDirectory()), to: unwritableURL)
+            XCTFail("Error when zipping to non writable archive not raised")
         } catch let error as Archive.ArchiveError { XCTAssert(error == .unwritableArchive)
         } catch { XCTFail("Unexpected error while trying to zip via fileManager.") }
 
