@@ -12,6 +12,9 @@ import Foundation
 
 #if canImport(zlib)
     import zlib
+#else
+    import CZLib
+    typealias zlib = CZLib
 #endif
 
 /// The compression method of an `Entry` in a ZIP `Archive`.
@@ -48,14 +51,10 @@ public extension Data {
     /// - Parameter checksum: The starting seed.
     /// - Returns: The checksum calculated from the bytes of the receiver and the starting seed.
     func crc32(checksum: CRC32) -> CRC32 {
-        #if canImport(zlib)
-            return withUnsafeBytes { bufferPointer in
-                let length = UInt32(count)
-                return CRC32(zlib.crc32(UInt(checksum), bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
-            }
-        #else
-            return builtInCRC32(checksum: checksum)
-        #endif
+        return withUnsafeBytes { bufferPointer in
+            let length = UInt32(count)
+            return CRC32(zlib.crc32(UInt(checksum), bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
+        }
     }
 
     /// Compress the output of `provider` and pass it to `consumer`.

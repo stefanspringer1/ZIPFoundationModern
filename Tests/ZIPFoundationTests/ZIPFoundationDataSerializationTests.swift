@@ -75,9 +75,7 @@ extension ZIPFoundationTests {
         let dataURL = resourceURL(for: #function, pathExtension: "data")
         let data = (try? Data(contentsOf: dataURL)) ?? Data()
         XCTAssertEqual(data.crc32(checksum: 0), 1_400_077_496)
-        #if canImport(zlib)
-            XCTAssertEqual(data.crc32(checksum: 0), data.builtInCRC32(checksum: 0))
-        #endif
+        XCTAssertEqual(data.crc32(checksum: 0), data.builtInCRC32(checksum: 0))
     }
 
     func testWriteLargeChunk() throws {
