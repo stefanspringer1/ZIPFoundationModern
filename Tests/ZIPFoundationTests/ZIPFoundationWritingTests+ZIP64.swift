@@ -30,27 +30,26 @@ extension ZIPFoundationTests {
         }
         XCTAssert(entry.checksum == data.crc32(checksum: 0))
         XCTAssert(archive.checkIntegrity())
-        let fileSystemRepresentation = FileManager.default.fileSystemRepresentation(withPath: archive.url.path)
-        guard let archiveFile = fopen(fileSystemRepresentation, "rb") else {
+        guard let archiveFile = try? Handle(forReadingFrom: archive.url) else {
             XCTFail("Failed to read data of archive file."); return
         }
         do {
             // Local File Header and Extra Field
-            fseeko(archiveFile, 0, SEEK_SET)
+            try archiveFile.seek(toOffset: 0)
             let lfhSize = checkLocalFileHeaderAndExtraField(entry: entry, dataSize: size,
                                                             entryNameLength: entryName.count) { size in
                 try Data.readChunk(of: size, from: archiveFile)
             }
             // Central Directory and Extra Field
             let cdOffset: UInt64 = lfhSize + size
-            fseeko(archiveFile, off_t(cdOffset), SEEK_SET)
+            try archiveFile.seek(toOffset: cdOffset)
             let cdSize = checkCentralDirectoryAndExtraField(entry: entry, dataSize: size,
                                                             entryNameLength: entryName.count) { size in
                 try Data.readChunk(of: size, from: archiveFile)
             }
             // ZIP64 End of Central Directory
             let zip64EOCDOffset: UInt64 = cdOffset + cdSize
-            fseeko(archiveFile, off_t(zip64EOCDOffset), SEEK_SET)
+            try archiveFile.seek(toOffset: zip64EOCDOffset)
             let zip64EOCDSize = checkZIP64EndOfCentralDirectory(archive: archive, cdSize: cdSize, cdOffset: cdOffset,
                                                                 zip64EOCDOffset: zip64EOCDOffset) { size in
                 try Data.readChunk(of: size, from: archiveFile)
@@ -58,7 +57,7 @@ extension ZIPFoundationTests {
             // End of Central Directory
             let eocdOffset = zip64EOCDOffset + zip64EOCDSize
             let eocdSize = 22
-            fseeko(archiveFile, off_t(eocdOffset), SEEK_SET)
+            try archiveFile.seek(toOffset: eocdOffset)
             let eocdData = try Data.readChunk(of: eocdSize, from: archiveFile)
             XCTAssertEqual(eocdData.scanValue(start: 16), UInt32.max)
         } catch {

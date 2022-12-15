@@ -14,8 +14,6 @@ extension Archive {
     var isMemoryArchive: Bool { return self.url.scheme == memoryURLScheme }
 }
 
-#if swift(>=5.0)
-
 extension Archive {
     /// Returns a `Data` object containing a representation of the receiver.
     public var data: Data? { return self.memoryFile?.data }
@@ -29,10 +27,11 @@ class MemoryFile {
         self.data = data
     }
 
-    func open(mode: String) -> FILEPointer? {
+    func open(mode: String) -> Handle? {
         let cookie = Unmanaged.passRetained(self)
         let writable = mode.count > 0 && (mode.first! != "r" || mode.last! == "+")
         let append = mode.count > 0 && mode.first! == "a"
+
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(Android)
         let result = writable
             ? funopen(cookie.toOpaque(), readStub, writeStub, seekStub, closeStub)
@@ -44,7 +43,7 @@ class MemoryFile {
         if append {
             fseeko(result, 0, SEEK_END)
         }
-        return result
+        return .init(openedMemoryFile: self, writable: writable, append: append)
     }
 }
 
@@ -152,5 +151,4 @@ private func seekStub(_ cookie: UnsafeMutableRawPointer?,
         return -1
     }
 }
-#endif
 #endif

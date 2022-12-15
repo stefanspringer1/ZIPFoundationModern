@@ -345,7 +345,7 @@ extension ZIPFoundationTests {
             XCTAssert(error == Archive.ArchiveError.invalidCRC32)
             return
         } catch {
-            XCTFail("Extraction should fail with an archive error")
+            XCTFail("Extraction should fail with an archive error, got \(error) instead")
         }
         XCTFail("Extraction should fail")
     }
@@ -377,7 +377,7 @@ extension ZIPFoundationTests {
             tempURLs.insert(tempDir)
         }
 
-        #if swift(>=5.0)
+        #if MEMORYFILE_IMPLEMENTED
         // Also cover the fallback codepath in the helper method to generate a unique temp URL.
         // In-memory archives have no filesystem representation and therefore don't need a per-volume
         // temp URL.

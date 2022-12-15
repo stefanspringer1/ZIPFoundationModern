@@ -150,18 +150,16 @@ extension ZIPFoundationTests {
         }
     }
 
-    func testCorruptFileErrorConditions() {
+    func testCorruptFileErrorConditions() throws {
         let archiveURL = self.resourceURL(for: #function, pathExtension: "zip")
-        let fileManager = FileManager()
-        let destinationFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: archiveURL.path)
-        let destinationFile: FILEPointer = fopen(destinationFileSystemRepresentation, "r+b")
+        let destinationFile = try Handle(forUpdating: archiveURL)
 
         do {
-            fseek(destinationFile, 64, SEEK_SET)
+            try destinationFile.seek(toOffset: 64)
             // We have to inject a large enough zeroes block to guarantee that libcompression
             // detects the failure when reading the stream
             _ = try Data.write(chunk: Data(count: 512*1024), to: destinationFile)
-            fclose(destinationFile)
+            try destinationFile.close()
             guard let archive = Archive(url: archiveURL, accessMode: .read) else {
                 XCTFail("Failed to read archive.")
                 return

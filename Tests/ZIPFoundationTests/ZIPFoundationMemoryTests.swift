@@ -8,12 +8,12 @@
 //  See https://github.com/weichsel/ZIPFoundation/blob/master/LICENSE for license information.
 //
 
+#if MEMORYFILE_IMPLEMENTED
+
 import Foundation
 
 import XCTest
 @testable import ZIPFoundation
-
-#if swift(>=5.0)
 
 extension ZIPFoundationTests {
     func testExtractUncompressedFolderEntriesFromMemory() {

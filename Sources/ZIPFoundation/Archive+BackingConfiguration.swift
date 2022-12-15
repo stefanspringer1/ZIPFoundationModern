@@ -13,13 +13,12 @@ import Foundation
 extension Archive {
 
     struct BackingConfiguration {
-        let file: FILEPointer
+        let file: Handle
         let endOfCentralDirectoryRecord: EndOfCentralDirectoryRecord
         let zip64EndOfCentralDirectory: ZIP64EndOfCentralDirectory?
-        #if swift(>=5.0)
         let memoryFile: MemoryFile?
 
-        init(file: FILEPointer,
+        init(file: Handle,
              endOfCentralDirectoryRecord: EndOfCentralDirectoryRecord,
              zip64EndOfCentralDirectory: ZIP64EndOfCentralDirectory? = nil,
              memoryFile: MemoryFile? = nil) {
@@ -28,25 +27,13 @@ extension Archive {
             self.zip64EndOfCentralDirectory = zip64EndOfCentralDirectory
             self.memoryFile = memoryFile
         }
-        #else
-
-        init(file: FILEPointer,
-             endOfCentralDirectoryRecord: EndOfCentralDirectoryRecord,
-             zip64EndOfCentralDirectory: ZIP64EndOfCentralDirectory?) {
-            self.file = file
-            self.endOfCentralDirectoryRecord = endOfCentralDirectoryRecord
-            self.zip64EndOfCentralDirectory = zip64EndOfCentralDirectory
-        }
-        #endif
     }
 
     static func makeBackingConfiguration(for url: URL, mode: AccessMode)
     -> BackingConfiguration? {
-        let fileManager = FileManager()
         switch mode {
         case .read:
-            let fileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
-            guard let archiveFile = fopen(fileSystemRepresentation, "rb"),
+            guard let archiveFile = try? Handle(forReadingFrom: url),
                   let (eocdRecord, zip64EOCD) = Archive.scanForEndOfCentralDirectoryRecord(in: archiveFile) else {
                 return nil
             }
@@ -66,19 +53,17 @@ extension Archive {
             } catch { return nil }
             fallthrough
         case .update:
-            let fileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
-            guard let archiveFile = fopen(fileSystemRepresentation, "rb+"),
+            guard let archiveFile = try? Handle(forUpdating: url),
                   let (eocdRecord, zip64EOCD) = Archive.scanForEndOfCentralDirectoryRecord(in: archiveFile) else {
                 return nil
             }
-            fseeko(archiveFile, 0, SEEK_SET)
+            try? archiveFile.seek(toOffset: 0)
             return BackingConfiguration(file: archiveFile,
                                         endOfCentralDirectoryRecord: eocdRecord,
                                         zip64EndOfCentralDirectory: zip64EOCD)
         }
     }
 
-    #if swift(>=5.0)
     static func makeBackingConfiguration(for data: Data, mode: AccessMode)
     -> BackingConfiguration? {
         let posixMode: String
@@ -108,21 +93,19 @@ extension Archive {
                                                                           offsetToStartOfCentralDirectory: 0,
                                                                           zipFileCommentLength: 0,
                                                                           zipFileCommentData: Data())
-            _ = endOfCentralDirectoryRecord.data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
-                fwrite(buffer.baseAddress, buffer.count, 1, archiveFile) // Errors handled during read
-            }
+
+            try? archiveFile.write(contentsOf: endOfCentralDirectoryRecord.data)
             fallthrough
         case .update:
             guard let (eocdRecord, zip64EOCD) = Archive.scanForEndOfCentralDirectoryRecord(in: archiveFile) else {
                 return nil
             }
 
-            fseeko(archiveFile, 0, SEEK_SET)
+            try? archiveFile.seek(toOffset: 0)
             return BackingConfiguration(file: archiveFile,
                                         endOfCentralDirectoryRecord: eocdRecord,
                                         zip64EndOfCentralDirectory: zip64EOCD,
                                         memoryFile: memoryFile)
         }
     }
-    #endif
 }

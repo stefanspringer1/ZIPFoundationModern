@@ -10,12 +10,6 @@
 
 import Foundation
 
-#if os(Android)
-public typealias FILEPointer = OpaquePointer
-#else
-public typealias FILEPointer = UnsafeMutablePointer<FILE>
-#endif
-
 protocol DataSerializable {
     static var size: Int { get }
     init?(data: Data, additionalDataProvider: (Int) throws -> Data)
@@ -30,17 +24,13 @@ extension Data {
 
     func scanValue<T>(start: Int) -> T {
         let subdata = self.subdata(in: start..<start+MemoryLayout<T>.size)
-        #if swift(>=5.0)
         return subdata.withUnsafeBytes { $0.load(as: T.self) }
-        #else
-        return subdata.withUnsafeBytes { $0.pointee }
-        #endif
     }
 
-    static func readStruct<T>(from file: FILEPointer, at offset: UInt64)
+    static func readStruct<T>(from file: Handle, at offset: UInt64)
     -> T? where T: DataSerializable {
         guard offset <= .max else { return nil }
-        fseeko(file, off_t(offset), SEEK_SET)
+        try? file.seek(toOffset: offset)
         guard let data = try? self.readChunk(of: T.size, from: file) else {
             return nil
         }
@@ -74,61 +64,33 @@ extension Data {
         return checksum
     }
 
-    static func readChunk(of size: Int, from file: FILEPointer) throws -> Data {
-        let alignment = MemoryLayout<UInt>.alignment
-        #if swift(>=4.1)
-        let bytes = UnsafeMutableRawPointer.allocate(byteCount: size, alignment: alignment)
-        #else
-        let bytes = UnsafeMutableRawPointer.allocate(bytes: size, alignedTo: alignment)
-        #endif
-        let bytesRead = fread(bytes, 1, size, file)
-        let error = ferror(file)
-        if error > 0 {
+    static func readChunk(of size: Int, from file: Handle) throws -> Data {
+        guard size > 0 else {
+            return Data()
+        }
+        
+        let data: Data?
+        do {
+            data = try file.read(upToCount: size)
+        } catch {
             throw DataError.unreadableFile
         }
-        #if swift(>=4.1)
-        return Data(bytesNoCopy: bytes, count: bytesRead, deallocator: .custom({ buf, _ in buf.deallocate() }))
-        #else
-        let deallocator = Deallocator.custom({ buf, _ in buf.deallocate(bytes: size, alignedTo: 1) })
-        return Data(bytesNoCopy: bytes, count: bytesRead, deallocator: deallocator)
-        #endif
+
+        guard let data else {
+            return Data()
+        }
+
+        return data
     }
 
-    static func write(chunk: Data, to file: FILEPointer) throws -> Int {
-        var sizeWritten: Int = 0
-        chunk.withUnsafeBytes { (rawBufferPointer) in
-            if let baseAddress = rawBufferPointer.baseAddress, rawBufferPointer.count > 0 {
-                let pointer = baseAddress.assumingMemoryBound(to: UInt8.self)
-                sizeWritten = fwrite(pointer, 1, chunk.count, file)
-            }
-        }
-        let error = ferror(file)
-        if error > 0 {
-            throw DataError.unwritableFile
-        }
-        return sizeWritten
+    static func write(chunk: Data, to file: Handle) throws -> Int {
+        try file.write(contentsOf: chunk)
+        return chunk.count
     }
 
     static func writeLargeChunk(_ chunk: Data, size: UInt64, bufferSize: Int,
-                                to file: FILEPointer) throws -> UInt64 {
-        var sizeWritten: UInt64 = 0
-        chunk.withUnsafeBytes { (rawBufferPointer) in
-            if let baseAddress = rawBufferPointer.baseAddress, rawBufferPointer.count > 0 {
-                let pointer = baseAddress.assumingMemoryBound(to: UInt8.self)
-
-                while sizeWritten < size {
-                    let remainingSize = size - sizeWritten
-                    let chunkSize = Swift.min(Int(remainingSize), bufferSize)
-                    let curPointer = pointer.advanced(by: Int(sizeWritten))
-                    fwrite(curPointer, 1, chunkSize, file)
-                    sizeWritten += UInt64(chunkSize)
-                }
-            }
-        }
-        let error = ferror(file)
-        if error > 0 {
-            throw DataError.unwritableFile
-        }
-        return sizeWritten
+                                to file: Handle) throws -> UInt64 {
+        try file.write(contentsOf: chunk)
+        return UInt64(chunk.count)
     }
 }

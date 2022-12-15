@@ -12,7 +12,7 @@ import XCTest
 @testable import ZIPFoundation
 
 extension ZIPFoundationTests {
-    func testReadStructureErrorConditions() {
+    func testReadStructureErrorConditions() throws {
         let processInfo = ProcessInfo.processInfo
         let fileManager = FileManager()
         var fileURL = ZIPFoundationTests.tempZipDirectoryURL
@@ -20,16 +20,15 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let fileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: fileURL.path)
-        let file: FILEPointer = fopen(fileSystemRepresentation, "rb")
+        let file: Handle = try Handle(forReadingFrom: fileURL)
         // Close the file to exercise the error path during readStructure that deals with
         // unreadable file data.
-        fclose(file)
+        try file.close()
         let centralDirectoryStructure: Entry.CentralDirectoryStructure? = Data.readStruct(from: file, at: 0)
         XCTAssertNil(centralDirectoryStructure)
     }
 
-    func testReadChunkErrorConditions() {
+    func testReadChunkErrorConditions() throws {
         let processInfo = ProcessInfo.processInfo
         let fileManager = FileManager()
         var fileURL = ZIPFoundationTests.tempZipDirectoryURL
@@ -37,11 +36,10 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let fileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: fileURL.path)
-        let file: FILEPointer = fopen(fileSystemRepresentation, "rb")
+        let file: Handle = try Handle(forReadingFrom: fileURL)
         // Close the file to exercise the error path during readChunk that deals with
         // unreadable file data.
-        fclose(file)
+        try file.close()
         do {
             _ = try Data.readChunk(of: 10, from: file)
         } catch let error as Data.DataError {
@@ -51,7 +49,7 @@ extension ZIPFoundationTests {
         }
     }
 
-    func testWriteChunkErrorConditions() {
+    func testWriteChunkErrorConditions() throws {
         let processInfo = ProcessInfo.processInfo
         let fileManager = FileManager()
         var fileURL = ZIPFoundationTests.tempZipDirectoryURL
@@ -59,11 +57,10 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let fileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: fileURL.path)
-        let file: FILEPointer = fopen(fileSystemRepresentation, "rb")
+        let file: Handle = try Handle(forReadingFrom: fileURL)
         // Close the file to exercise the error path during writeChunk that deals with
         // unwritable files.
-        fclose(file)
+        try file.close()
         do {
             let dataWritten = try Data.write(chunk: Data(count: 10), to: file)
             XCTAssert(dataWritten == 0)
@@ -83,7 +80,7 @@ extension ZIPFoundationTests {
         #endif
     }
 
-    func testWriteLargeChunk() {
+    func testWriteLargeChunk() throws {
         let processInfo = ProcessInfo.processInfo
         let fileManager = FileManager()
         var fileURL = ZIPFoundationTests.tempZipDirectoryURL
@@ -91,13 +88,12 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let fileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: fileURL.path)
-        let file: FILEPointer = fopen(fileSystemRepresentation, "rb+")
+        let file: Handle = try Handle(forUpdating: fileURL)
         let data = Data.makeRandomData(size: 1024)
         do {
             let writtenSize = try Data.writeLargeChunk(data, size: 1024, bufferSize: 256, to: file)
             XCTAssertEqual(writtenSize, 1024)
-            fseeko(file, 0, SEEK_SET)
+            try file.seek(toOffset: 0)
             let writtenData = try Data.readChunk(of: Int(writtenSize), from: file)
             XCTAssertEqual(writtenData, data)
         } catch {
@@ -105,7 +101,7 @@ extension ZIPFoundationTests {
         }
     }
 
-    func testWriteLargeChunkErrorConditions() {
+    func testWriteLargeChunkErrorConditions() throws {
         let processInfo = ProcessInfo.processInfo
         let fileManager = FileManager()
         var fileURL = ZIPFoundationTests.tempZipDirectoryURL
@@ -113,12 +109,11 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let fileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: fileURL.path)
-        let file: FILEPointer = fopen(fileSystemRepresentation, "rb")
+        let file: Handle = try Handle(forReadingFrom: fileURL)
         let data = Data.makeRandomData(size: 1024)
         // Close the file to exercise the error path during writeChunk that deals with
         // unwritable files.
-        fclose(file)
+        try file.close()
         do {
             let dataWritten = try Data.writeLargeChunk(data, size: 1024, bufferSize: 256, to: file)
             XCTAssert(dataWritten == 0)

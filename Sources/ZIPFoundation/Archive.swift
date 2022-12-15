@@ -126,7 +126,7 @@ public final class Archive: Sequence {
     public let url: URL
     /// Access mode for an archive file.
     public let accessMode: AccessMode
-    var archiveFile: FILEPointer
+    var archiveFile: Handle
     var endOfCentralDirectoryRecord: EndOfCentralDirectoryRecord
     var zip64EndOfCentralDirectory: ZIP64EndOfCentralDirectory?
     var preferredEncoding: String.Encoding?
@@ -170,10 +170,9 @@ public final class Archive: Sequence {
         self.archiveFile = config.file
         self.endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
         self.zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
-        setvbuf(self.archiveFile, nil, _IOFBF, Int(defaultPOSIXBufferSize))
+//        setvbuf(self.archiveFile, nil, _IOFBF, Int(defaultPOSIXBufferSize))
     }
 
-    #if swift(>=5.0)
     var memoryFile: MemoryFile?
 
     /// Initializes a new in-memory ZIP `Archive`.
@@ -204,10 +203,9 @@ public final class Archive: Sequence {
         self.endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
         self.zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
     }
-    #endif
 
     deinit {
-        fclose(self.archiveFile)
+        try? archiveFile.close()
     }
 
     public func makeIterator() -> AnyIterator<Entry> {
@@ -267,16 +265,15 @@ public final class Archive: Sequence {
 
     // MARK: - Helpers
 
-    static func scanForEndOfCentralDirectoryRecord(in file: FILEPointer)
+    static func scanForEndOfCentralDirectoryRecord(in file: Handle)
         -> EndOfCentralDirectoryStructure? {
         var eocdOffset: UInt64 = 0
         var index = minEndOfCentralDirectoryOffset
-        fseeko(file, 0, SEEK_END)
-        let archiveLength = Int64(ftello(file))
+        _ = try? file.seekToEnd()
+        let archiveLength = Int64((try? file.offset()) ?? 0)
         while eocdOffset == 0 && index <= archiveLength {
-            fseeko(file, off_t(archiveLength - index), SEEK_SET)
-            var potentialDirectoryEndTag: UInt32 = UInt32()
-            fread(&potentialDirectoryEndTag, 1, MemoryLayout<UInt32>.size, file)
+            try? file.seek(toOffset: UInt64(archiveLength - index))
+            var potentialDirectoryEndTag: UInt32 = (try? file.read(upToCount: MemoryLayout<UInt32>.size))?.uint32 ?? 0
             if potentialDirectoryEndTag == UInt32(endOfCentralDirectoryStructSignature) {
                 eocdOffset = UInt64(archiveLength - index)
                 guard let eocd: EndOfCentralDirectoryRecord = Data.readStruct(from: file, at: eocdOffset) else {
@@ -290,7 +287,7 @@ public final class Archive: Sequence {
         return nil
     }
 
-    private static func scanForZIP64EndOfCentralDirectory(in file: FILEPointer, eocdOffset: UInt64)
+    private static func scanForZIP64EndOfCentralDirectory(in file: Handle, eocdOffset: UInt64)
         -> ZIP64EndOfCentralDirectory? {
         guard UInt64(ZIP64EndOfCentralDirectoryLocator.size) < eocdOffset else {
             return nil
@@ -360,5 +357,13 @@ extension Archive.EndOfCentralDirectoryRecord {
         self.offsetToStartOfCentralDirectory = startOfCentralDirectory
         self.zipFileCommentLength = record.zipFileCommentLength
         self.zipFileCommentData = record.zipFileCommentData
+    }
+}
+
+extension Data {
+    var uint32: UInt32 {
+        return UInt32(littleEndian: self[0..<4].withUnsafeBytes { bytes in
+            bytes.load(as: UInt32.self)
+        })
     }
 }

@@ -34,11 +34,10 @@ extension Archive {
                 throw CocoaError(.fileWriteFileExists, userInfo: [NSFilePathErrorKey: url.path])
             }
             try fileManager.createParentDirectoryStructure(for: url)
-            let destinationRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
-            guard let destinationFile: FILEPointer = fopen(destinationRepresentation, "wb+") else {
+            guard let destinationFile = try? Handle(forWriteUpdate: url) else {
                 throw CocoaError(.fileNoSuchFile)
             }
-            defer { fclose(destinationFile) }
+            defer { try? destinationFile.close() }
             let consumer = { _ = try Data.write(chunk: $0, to: destinationFile) }
             checksum = try self.extract(entry, bufferSize: bufferSize, skipCRC32: skipCRC32,
                                         progress: progress, consumer: consumer)
@@ -83,7 +82,7 @@ extension Archive {
         var checksum = CRC32(0)
         let localFileHeader = entry.localFileHeader
         guard entry.dataOffset <= .max else { throw ArchiveError.invalidLocalHeaderDataOffset }
-        fseeko(self.archiveFile, off_t(entry.dataOffset), SEEK_SET)
+        try archiveFile.seek(toOffset: entry.dataOffset)
         progress?.totalUnitCount = self.totalUnitCountForReading(entry)
         switch entry.type {
         case .file:

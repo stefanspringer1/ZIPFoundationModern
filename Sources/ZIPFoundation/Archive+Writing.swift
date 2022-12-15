@@ -65,11 +65,10 @@ extension Archive {
         var provider: Provider
         switch type {
         case .file:
-            let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: fileURL.path)
-            guard let entryFile: FILEPointer = fopen(entryFileSystemRepresentation, "rb") else {
+            guard let entryFile = try? Handle(forReadingFrom: fileURL) else {
                 throw CocoaError(.fileNoSuchFile)
             }
-            defer { fclose(entryFile) }
+            defer { try? entryFile.close() }
             provider = { _, _ in return try Data.readChunk(of: bufferSize, from: entryFile) }
             try self.addEntry(with: path, type: type, uncompressedSize: uncompressedSize,
                               modificationDate: modDate, permissions: permissions,
@@ -123,14 +122,15 @@ extension Archive {
         progress?.totalUnitCount = type == .directory ? defaultDirectoryUnitCount : uncompressedSize
         let (eocdRecord, zip64EOCD) = (self.endOfCentralDirectoryRecord, self.zip64EndOfCentralDirectory)
         guard self.offsetToStartOfCentralDirectory <= .max else { throw ArchiveError.invalidCentralDirectoryOffset }
-        var startOfCD = Int64(self.offsetToStartOfCentralDirectory)
-        fseeko(self.archiveFile, off_t(startOfCD), SEEK_SET)
+        var startOfCD = UInt64(self.offsetToStartOfCentralDirectory)
+
+        try archiveFile.seek(toOffset: startOfCD)
         let existingSize = self.sizeOfCentralDirectory
         let existingData = try Data.readChunk(of: Int(existingSize), from: self.archiveFile)
-        fseeko(self.archiveFile, off_t(startOfCD), SEEK_SET)
-        let fileHeaderStart = Int64(ftello(self.archiveFile))
+        try archiveFile.seek(toOffset: startOfCD)
+        let fileHeaderStart = try archiveFile.offset()
         let modDateTime = modificationDate.fileModificationDateTime
-        defer { fflush(self.archiveFile) }
+        defer { try? archiveFile.synchronize() }
         do {
             // Local File Header
             var localFileHeader = try self.writeLocalFileHeader(path: path, compressionMethod: compressionMethod,
@@ -140,14 +140,14 @@ extension Archive {
             let (written, checksum) = try self.writeEntry(uncompressedSize: uncompressedSize, type: type,
                                                           compressionMethod: compressionMethod, bufferSize: bufferSize,
                                                           progress: progress, provider: provider)
-            startOfCD = Int64(ftello(self.archiveFile))
+            startOfCD = try archiveFile.offset()
             // Write the local file header a second time. Now with compressedSize (if applicable) and a valid checksum.
-            fseeko(self.archiveFile, off_t(fileHeaderStart), SEEK_SET)
+            try archiveFile.seek(toOffset: fileHeaderStart)
             localFileHeader = try self.writeLocalFileHeader(path: path, compressionMethod: compressionMethod,
                                                             size: (UInt64(uncompressedSize), UInt64(written)),
                                                             checksum: checksum, modificationDateTime: modDateTime)
             // Central Directory
-            fseeko(self.archiveFile, off_t(startOfCD), SEEK_SET)
+            try archiveFile.seek(toOffset: startOfCD)
             _ = try Data.writeLargeChunk(existingData, size: existingSize, bufferSize: bufferSize, to: archiveFile)
             let permissions = permissions ?? (type == .directory ? defaultDirectoryPermissions : defaultFilePermissions)
             let externalAttributes = FileManager.externalFileAttributesForEntry(of: type, permissions: permissions)
@@ -155,7 +155,7 @@ extension Archive {
                                                                      relativeOffset: UInt64(fileHeaderStart),
                                                                      externalFileAttributes: externalAttributes)
             // End of Central Directory Record (including ZIP64 End of Central Directory Record/Locator)
-            let startOfEOCD = UInt64(ftello(self.archiveFile))
+            let startOfEOCD = try archiveFile.offset()
             let eocd = try self.writeEndOfCentralDirectory(centralDirectoryStructure: centralDir,
                                                            startOfCentralDirectory: UInt64(startOfCD),
                                                            startOfEndOfCentralDirectory: startOfEOCD, operation: .add)
@@ -184,7 +184,7 @@ extension Archive {
             let cds = currentEntry.centralDirectoryStructure
             if currentEntry != entry {
                 let entryStart = cds.effectiveRelativeOffsetOfLocalHeader
-                fseeko(self.archiveFile, off_t(entryStart), SEEK_SET)
+                try archiveFile.seek(toOffset: entryStart)
                 let provider: Provider = { (_, chunkSize) -> Data in
                     return try Data.readChunk(of: chunkSize, from: self.archiveFile)
                 }
@@ -201,9 +201,9 @@ extension Archive {
                 centralDirectoryData.append(updatedCentralDirectory.data)
             } else { offset = currentEntry.localSize }
         }
-        let startOfCentralDirectory = UInt64(ftello(tempArchive.archiveFile))
+        let startOfCentralDirectory = try tempArchive.archiveFile.offset()
         _ = try Data.write(chunk: centralDirectoryData, to: tempArchive.archiveFile)
-        let startOfEndOfCentralDirectory = UInt64(ftello(tempArchive.archiveFile))
+        let startOfEndOfCentralDirectory = try tempArchive.archiveFile.offset()
         tempArchive.endOfCentralDirectoryRecord = self.endOfCentralDirectoryRecord
         tempArchive.zip64EndOfCentralDirectory = self.zip64EndOfCentralDirectory
         let ecodStructure = try
@@ -213,14 +213,13 @@ extension Archive {
                                                    operation: .remove)
         (tempArchive.endOfCentralDirectoryRecord, tempArchive.zip64EndOfCentralDirectory) = ecodStructure
         (self.endOfCentralDirectoryRecord, self.zip64EndOfCentralDirectory) = ecodStructure
-        fflush(tempArchive.archiveFile)
+        try tempArchive.archiveFile.synchronize()
         try self.replaceCurrentArchive(with: tempArchive)
     }
 
     func replaceCurrentArchive(with archive: Archive) throws {
-        fclose(self.archiveFile)
+        try archiveFile.close()
         if self.isMemoryArchive {
-            #if swift(>=5.0)
             guard let data = archive.data,
                   let config = Archive.makeBackingConfiguration(for: data, mode: .update) else {
                 throw ArchiveError.unwritableArchive
@@ -229,7 +228,6 @@ extension Archive {
             self.memoryFile = config.memoryFile
             self.endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
             self.zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
-            #endif
         } else {
             let fileManager = FileManager()
             #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
@@ -243,8 +241,7 @@ extension Archive {
             _ = try fileManager.removeItem(at: self.url)
             _ = try fileManager.moveItem(at: archive.url, to: self.url)
             #endif
-            let fileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: self.url.path)
-            guard let file = fopen(fileSystemRepresentation, "rb+") else { throw ArchiveError.unreadableArchive }
+            guard let file = try? Handle(forUpdating: url) else { throw ArchiveError.unreadableArchive }
             self.archiveFile = file
         }
     }
@@ -267,9 +264,9 @@ private extension Archive {
     func rollback(_ localFileHeaderStart: UInt64, _ existingCentralDirectory: (data: Data, size: UInt64),
                   _ bufferSize: Int, _ endOfCentralDirRecord: EndOfCentralDirectoryRecord,
                   _ zip64EndOfCentralDirectory: ZIP64EndOfCentralDirectory?) throws {
-        fflush(self.archiveFile)
-        ftruncate(fileno(self.archiveFile), off_t(localFileHeaderStart))
-        fseeko(self.archiveFile, off_t(localFileHeaderStart), SEEK_SET)
+        try archiveFile.synchronize()
+        try archiveFile.truncate(atOffset: localFileHeaderStart)
+        try archiveFile.seek(toOffset: localFileHeaderStart)
         _ = try Data.writeLargeChunk(existingCentralDirectory.data, size: existingCentralDirectory.size,
                                      bufferSize: bufferSize, to: archiveFile)
         _ = try Data.write(chunk: existingCentralDirectory.data, to: self.archiveFile)
@@ -283,15 +280,11 @@ private extension Archive {
         var archive: Archive
         var url: URL?
         if self.isMemoryArchive {
-            #if swift(>=5.0)
             guard let tempArchive = Archive(data: Data(), accessMode: .create,
                                             preferredEncoding: self.preferredEncoding) else {
                 throw ArchiveError.unwritableArchive
             }
             archive = tempArchive
-            #else
-            fatalError("Memory archives are unsupported.")
-            #endif
         } else {
             let manager = FileManager()
             let tempDir = URL.temporaryReplacementDirectoryURL(for: self)

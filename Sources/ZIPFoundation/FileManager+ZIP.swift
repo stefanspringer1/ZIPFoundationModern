@@ -306,29 +306,6 @@ extension Date {
     }
 }
 
-#if swift(>=4.2)
-#else
-
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-#else
-
-// The swift-corelibs-foundation version of NSError.swift was missing a convenience method to create
-// error objects from error codes. (https://github.com/apple/swift-corelibs-foundation/pull/1420)
-// We have to provide an implementation for non-Darwin platforms using Swift versions < 4.2.
-
-public extension CocoaError {
-    public static func error(_ code: CocoaError.Code, userInfo: [AnyHashable: Any]? = nil, url: URL? = nil) -> Error {
-        var info: [String: Any] = userInfo as? [String: Any] ?? [:]
-        if let url = url {
-            info[NSURLErrorKey] = url
-        }
-        return NSError(domain: NSCocoaErrorDomain, code: code.rawValue, userInfo: info)
-    }
-}
-
-#endif
-#endif
-
 public extension URL {
     func isContained(in parentDirectoryURL: URL) -> Bool {
         // Ensure this URL is contained in the passed in URL
