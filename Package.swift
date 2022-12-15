@@ -32,9 +32,6 @@ import PackageDescription
                     dependencies: ["ZIPFoundation"],
                     resources: [
                         .process("Resources"),
-                    ],
-                    cSettings: [
-                        .define("_GNU_SOURCE", to: "1", .when(platforms: [.linux, .android])),
                     ]),
     ]
 #endif
