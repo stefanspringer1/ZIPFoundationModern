@@ -12,8 +12,18 @@ import PackageDescription
     ]
 #else
     let targets: [Target] = [
-        .systemLibrary(name: "CZLib", pkgConfig: "zlib", providers: [.brew(["zlib"]), .apt(["zlib"])]),
-        .target(name: "ZIPFoundation", dependencies: ["CZLib"], cSettings: [.define("_GNU_SOURCE", to: "1")]),
+        .target(
+            name: "CZLib",
+            publicHeadersPath: "include",
+            cSettings: [
+                .unsafeFlags(["-Wno-shorten-64-to-32"]),
+                .define("Z_HAVE_UNISTD_H", .when(platforms: [.macOS, .linux])),
+                .define("HAVE_STDARG_H"),
+                .define("HAVE_HIDDEN"),
+                .define("_CRT_SECURE_NO_DEPRECATE", .when(platforms: [.windows])),
+                .define("_CRT_NONSTDC_NO_DEPRECATE", .when(platforms: [.windows])),
+            ]),
+        .target(name: "ZIPFoundation", dependencies: ["CZLib"]),
         .testTarget(name: "ZIPFoundationTests",
                     dependencies: ["ZIPFoundation"],
                     resources: [
