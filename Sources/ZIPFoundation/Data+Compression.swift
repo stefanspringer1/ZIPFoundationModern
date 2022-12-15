@@ -14,7 +14,6 @@ import Foundation
     import zlib
 #else
     import CZLib
-    typealias zlib = CZLib
 #endif
 
 /// The compression method of an `Entry` in a ZIP `Archive`.
@@ -53,7 +52,11 @@ public extension Data {
     func crc32(checksum: CRC32) -> CRC32 {
         return withUnsafeBytes { bufferPointer in
             let length = UInt32(count)
+            #if canImport(zlib)
             return CRC32(zlib.crc32(UInt(checksum), bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
+            #else
+            return CRC32(CZLib.crc32(UInt(checksum), bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
+            #endif
         }
     }
 
