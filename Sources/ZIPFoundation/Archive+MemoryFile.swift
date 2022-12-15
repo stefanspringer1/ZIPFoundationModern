@@ -10,10 +10,6 @@
 
 import Foundation
 
-#if canImport(CZLib)
-import CZLib
-#endif
-
 extension Archive {
     var isMemoryArchive: Bool { url.scheme == memoryURLScheme }
 }
@@ -36,20 +32,15 @@ class MemoryFile {
         let writable = mode.count > 0 && (mode.first! != "r" || mode.last! == "+")
         let append = mode.count > 0 && mode.first! == "a"
 
-        #if os(Windows)
-            fatalError()
-        #else
-            #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(Android)
-                let result = writable
-                    ? funopen(cookie.toOpaque(), readStub, writeStub, seekStub, closeStub)
-                    : funopen(cookie.toOpaque(), readStub, nil, seekStub, closeStub)
-            #else
-                let stubs = cookie_io_functions_t(read: readStub, write: writeStub, seek: seekStub, close: closeStub)
-                let result = fopencookie(cookie.toOpaque(), mode, stubs)
-            #endif
+        #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(Android)
+            let result = writable
+                ? funopen(cookie.toOpaque(), readStub, writeStub, seekStub, closeStub)
+                : funopen(cookie.toOpaque(), readStub, nil, seekStub, closeStub)
             if append {
                 fseeko(result, 0, SEEK_END)
             }
+        #else
+            fatalError()
         #endif
         return .init(openedMemoryFile: self, writable: writable, append: append)
     }
