@@ -119,6 +119,7 @@ public struct Entry: Equatable {
     }
 
     static let dosLatinUSEncoding = UInt32(0x400)
+    /// here be dragons! this is ripped out of the open source CoreFoundation: https://github.com/apple/swift-corelibs-foundation/blob/3e9c91fe7fba738c56061ec367569db3a6db6a42/CoreFoundation/String.subproj/CFStringUtilities.c#L181
     static let codepage437 = String.Encoding(rawValue: UInt(1 << 31) | UInt(dosLatinUSEncoding))
 
     /// The `path` of the receiver within a ZIP `Archive`.
