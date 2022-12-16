@@ -107,7 +107,8 @@ extension ZIPFoundationTests {
             }
         }
     }
-
+    /// extremely long path names don't work on Windows and will cause a fatalError in this code
+    #if !os(Windows)
     func testExtractErrorConditions() {
         let archive = archive(for: #function, mode: .read)
         XCTAssertNotNil(archive)
@@ -149,6 +150,7 @@ extension ZIPFoundationTests {
             return
         }
     }
+    #endif
 
     func testCorruptFileErrorConditions() throws {
         let archiveURL = resourceURL(for: #function, pathExtension: "zip")
