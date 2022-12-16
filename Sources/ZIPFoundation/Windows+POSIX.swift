@@ -2,6 +2,7 @@
     import Foundation
 
     typealias lstat = _stat
+    typealias mode_t = UInt16
 
     // https://stackoverflow.com/a/58037981/1125248
     // Algorithm: http://howardhinnant.github.io/date_algorithms.html
