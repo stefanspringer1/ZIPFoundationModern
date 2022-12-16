@@ -336,7 +336,8 @@ extension ZIPFoundationTests {
         let archive = archive(for: #function, mode: .create)
         do {
             try fileManager.setAttributes([.posixPermissions: permissions], ofItemAtPath: assetURL.path)
-            fileManager.attributesOfItem(atPath: assetURL.path)
+            let assetPOSIXPermissions = try fileManager.attributesOfItem(atPath: assetURL.path)[.posixPermissions] as? NSNumber
+            XCTAssertEqual(assetPOSIXPermissions?.int16Value ?? 0, permissions.int16Value, "permissions didn't actualy get set")
             let relativePath = assetURL.lastPathComponent
             let baseURL = assetURL.deletingLastPathComponent()
             try archive.addEntry(with: relativePath, relativeTo: baseURL)
