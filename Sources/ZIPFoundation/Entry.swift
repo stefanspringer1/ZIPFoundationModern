@@ -25,10 +25,10 @@ public struct Entry: Equatable {
         case symlink
 
         init(mode: mode_t) {
-            switch mode & S_IFMT {
-            case S_IFDIR:
+            switch mode & mode_t(S_IFMT) {
+            case mode_t(S_IFDIR):
                 self = .directory
-            case S_IFLNK:
+            case mode_t(S_IFLNK):
                 self = .symlink
             default:
                 self = .file
@@ -155,11 +155,11 @@ public struct Entry: Equatable {
         case .unix, .osx:
             let mode = mode_t(centralDirectoryStructure.externalFileAttributes >> 16) & S_IFMT
             switch mode {
-            case S_IFREG:
+            case mode_t(S_IFREG):
                 return .file
-            case S_IFDIR:
+            case mode_t(S_IFDIR):
                 return .directory
-            case S_IFLNK:
+            case mode_t(S_IFLNK):
                 return .symlink
             default:
                 return isDirectory ? .directory : .file
