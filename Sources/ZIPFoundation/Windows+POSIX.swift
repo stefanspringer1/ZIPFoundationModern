@@ -1,7 +1,7 @@
 #if os(Windows)
     import Foundation
-    import WinSDK
-    import CRT
+
+    typealias mode_t = UInt16
 
     @discardableResult
     func lstat(_ path: UnsafePointer<CChar>, _ out: UnsafeMutablePointer<stat>!) -> Int32 {

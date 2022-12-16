@@ -10,11 +10,6 @@
 
 import Foundation
 
-#if os(Windows)
-import WinSDK
-import CRT
-#endif
-
 extension FileManager {
     typealias CentralDirectoryStructure = Entry.CentralDirectoryStructure
 
