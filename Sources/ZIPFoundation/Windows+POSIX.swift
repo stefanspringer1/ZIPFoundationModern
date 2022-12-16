@@ -1,5 +1,7 @@
 #if os(Windows)
     import Foundation
+    import WinSDK
+    import ucrt
 
     typealias lstat = _stat
     typealias mode_t = UInt16
