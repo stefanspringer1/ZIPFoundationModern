@@ -336,6 +336,7 @@ extension ZIPFoundationTests {
         let archive = archive(for: #function, mode: .create)
         do {
             try fileManager.setAttributes([.posixPermissions: permissions], ofItemAtPath: assetURL.path)
+            fileManager.attributesOfItem(atPath: assetURL.path)
             let relativePath = assetURL.lastPathComponent
             let baseURL = assetURL.deletingLastPathComponent()
             try archive.addEntry(with: relativePath, relativeTo: baseURL)
