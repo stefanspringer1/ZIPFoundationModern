@@ -3,7 +3,7 @@
     import WinSDK
     import ucrt
 
-    typealias lstat = _stat
+    typealias lstat = stat
     typealias mode_t = UInt16
 
     let S_IFLNK = mode_t(0)
