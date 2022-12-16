@@ -41,4 +41,15 @@
         let min = (60 * hr + Int(t.tm_min))
         return time_t(60 * min + Int(t.tm_sec))
     }
+
+    struct _timespec {
+        let tv_sec: Int
+        let tv_nsec: Int
+    }
+
+    extension stat {
+        var st_mtim: _timespec {
+            .init(tv_sec: Int(st_mtime), tv_nsec: 0)
+        }
+    }
 #endif
