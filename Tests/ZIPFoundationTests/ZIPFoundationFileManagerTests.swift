@@ -345,7 +345,7 @@ extension ZIPFoundationTests {
             guard let filePermissions = entry.fileAttributes[.posixPermissions] as? NSNumber else {
                 throw CocoaError(CocoaError.fileReadUnknown)
             }
-            XCTAssert(permissions.int16Value == filePermissions.int16Value)
+            XCTAssert(permissions.int16Value == filePermissions.int16Value, "invalid permissions. expected: \(String(permissions.int16Value, radix: 0o10)), actual: \(String(filePermissions.int16Value, radix: 0o10))")
         } catch { XCTFail("Failed to test POSIX permissions") }
     }
 
