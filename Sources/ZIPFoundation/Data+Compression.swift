@@ -50,21 +50,14 @@ public extension Data {
     /// - Parameter checksum: The starting seed.
     /// - Returns: The checksum calculated from the bytes of the receiver and the starting seed.
     func crc32(checksum: CRC32) -> CRC32 {
-        withUnsafeBytes { bufferPointer in
-            let length = UInt32(count)
-
-            #if os(Windows)
-                let checksum = UInt32(checksum)
-            #else
-                let checksum = UInt(checksum)
-            #endif
-
-            #if canImport(zlib)
-                return CRC32(zlib.crc32(checksum, bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
-            #else
-                return CRC32(CZLib.crc32(checksum, bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
-            #endif
-        }
+        let length = UInt32(count)
+        #if canImport(zlib)
+            return withUnsafeBytes { bufferPointer in
+                CRC32(zlib.crc32(UInt(checksum), bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
+            }
+        #else
+            return self.builtInCRC32(checksum: checksum)
+        #endif
     }
 
     /// Compress the output of `provider` and pass it to `consumer`.
