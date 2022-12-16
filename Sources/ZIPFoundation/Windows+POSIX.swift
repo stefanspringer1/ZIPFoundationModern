@@ -3,8 +3,11 @@
     import WinSDK
     import ucrt
 
-    typealias lstat = stat
     typealias mode_t = UInt16
+
+    func lstat(_ path: UnsafePointer<CChar>, _ out: UnsafeMutablePointer<stat>!) -> Int32 {
+        stat(path, out)
+    }
 
     let S_IFLNK = mode_t(0)
 
