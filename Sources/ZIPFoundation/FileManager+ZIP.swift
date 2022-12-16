@@ -222,6 +222,8 @@ extension FileManager {
         lstat(entryFileSystemRepresentation, &fileStat)
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
             let modTimeSpec = fileStat.st_mtimespec
+        #elseif os(Windows)
+            let modTimeSpec = fileStat.st_mtime
         #else
             let modTimeSpec = fileStat.st_mtim
         #endif
