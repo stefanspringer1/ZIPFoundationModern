@@ -80,10 +80,10 @@ extension ZIPFoundationTests {
             let unwritableURL = URL(fileURLWithPath: "/test.zip")
             try fileManager.zipItem(at: URL(fileURLWithPath: NSTemporaryDirectory()), to: unwritableURL)
             #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-            // we absolutely know that you can't write to / on Apple operating systems
-            XCTFail("Error when zipping to non writable archive not raised")
+                // we absolutely know that you can't write to / on Apple operating systems
+                XCTFail("Error when zipping to non writable archive not raised")
             #else
-            print("it's odd, but you can totally write to the root of this drive. skipping test")
+                print("it's odd, but you can totally write to the root of this drive. skipping test")
             #endif
         } catch let error as Archive.ArchiveError {
             XCTAssert(error == .unwritableArchive)

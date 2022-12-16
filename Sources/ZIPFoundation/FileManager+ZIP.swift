@@ -203,9 +203,9 @@ extension FileManager {
         return externalFileAttributes
     }
 
-    class func permissionsForItem(at URL: URL) throws -> UInt16 {
+    class func permissionsForItem(at url: URL) throws -> UInt16 {
         let fileManager = FileManager()
-        let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: URL.path)
+        let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
         var fileStat = stat()
         lstat(entryFileSystemRepresentation, &fileStat)
         let permissions = fileStat.st_mode
