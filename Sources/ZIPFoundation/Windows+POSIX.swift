@@ -43,13 +43,13 @@
     }
 
     struct _timespec {
-        let tv_sec: Int
-        let tv_nsec: Int
+        let tv_sec: Int64
+        let tv_nsec: Int64 = 0
     }
 
     extension stat {
         var st_mtim: _timespec {
-            .init(tv_sec: Int(st_mtime), tv_nsec: 0)
+            .init(tv_sec: st_mtime)
         }
     }
 #endif
