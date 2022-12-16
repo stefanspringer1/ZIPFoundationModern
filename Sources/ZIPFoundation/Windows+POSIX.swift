@@ -31,6 +31,8 @@
         }
         let days_since_epoch = days_from_epoch(year, month + 1, Int(t.tm_mday))
 
-        return 60 * (60 * (24 * days_since_epoch + Int(t.tm_hour)) + Int(t.tm_min)) + Int(t.tm_sec)
+        let hr = (24 * days_since_epoch + Int(t.tm_hour))
+        let min = (60 * hr + Int(t.tm_min))
+        return time_t(60 * min + Int(t.tm_sec))
     }
 #endif
