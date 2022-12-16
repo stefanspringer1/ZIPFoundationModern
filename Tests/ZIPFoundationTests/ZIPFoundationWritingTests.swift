@@ -114,6 +114,8 @@ extension ZIPFoundationTests {
             XCTFail("Unexpected error while trying to add non-existant file to an archive.")
         }
         XCTAssertTrue(didCatchExpectedError)
+
+        #if !os(Windows)
         // Cover the error code path when `fopen` fails during entry addition.
         let assetURL = resourceURL(for: #function, pathExtension: "txt")
         runWithFileDescriptorLimit(0) {
@@ -126,6 +128,7 @@ extension ZIPFoundationTests {
             }
         }
         XCTAssertTrue(didCatchExpectedError)
+        #endif
     }
 
     func testArchiveAddEntryErrorConditions() {
@@ -268,6 +271,8 @@ extension ZIPFoundationTests {
             XCTFail("Failed to find entry to remove in uncompressed folder")
             return
         }
+
+        #if !os(Windows)
         // We don't have access to the temp archive file that Archive.remove
         // uses. To exercise the error code path, we temporarily limit the number of open files for
         // the test process to exercise the error code path here.
@@ -282,6 +287,8 @@ extension ZIPFoundationTests {
             }
         }
         XCTAssertTrue(didCatchExpectedError)
+        #endif
+        
         didCatchExpectedError = false
         let readonlyArchive = self.archive(for: #function, mode: .read)
         do {

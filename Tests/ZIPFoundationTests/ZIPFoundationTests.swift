@@ -17,10 +17,6 @@ enum AdditionalDataError: Error {
 }
 
 class ZIPFoundationTests: XCTestCase {
-    class var testBundle: Bundle {
-        Bundle(for: self)
-    }
-
     static var tempZipDirectoryURL: URL = {
         let processInfo = ProcessInfo.processInfo
         var tempZipDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -135,6 +131,7 @@ class ZIPFoundationTests: XCTestCase {
         return URL
     }
 
+    #if !os(Windows)
     func runWithFileDescriptorLimit(_ limit: UInt64, handler: () -> Void) {
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(Android)
             let fileNoFlag = RLIMIT_NOFILE
@@ -149,6 +146,7 @@ class ZIPFoundationTests: XCTestCase {
         defer { setrlimit(fileNoFlag, &storedRlimit) }
         handler()
     }
+    #endif
 
     func runWithoutMemory(handler: () -> Void) {
         #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
