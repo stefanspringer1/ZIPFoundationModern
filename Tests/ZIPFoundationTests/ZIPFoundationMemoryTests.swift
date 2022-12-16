@@ -36,7 +36,7 @@
                         XCTAssert(checksum == entry.checksum)
                     }
                 } catch {
-                    XCTFail("Failed to unzip uncompressed folder entries")
+                    XCTFail("Failed to unzip uncompressed folder entries. Error: \(error)")
                 }
             }
             XCTAssert(archive.data != nil)
@@ -62,7 +62,7 @@
                         XCTAssert(checksum == entry.checksum)
                     }
                 } catch {
-                    XCTFail("Failed to unzip compressed folder entries")
+                    XCTFail("Failed to unzip compressed folder entries. Error: \(error)")
                 }
             }
         }
@@ -237,7 +237,7 @@
                 }
                 return archive
             } catch {
-                XCTFail("Failed to open memory archive for '\(sourceArchiveURL.lastPathComponent)'")
+                XCTFail("Failed to open memory archive for '\(sourceArchiveURL.lastPathComponent)'. Error: \(error)")
                 type(of: self).tearDown()
                 preconditionFailure()
             }

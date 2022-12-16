@@ -32,7 +32,7 @@ extension ZIPFoundationTests {
                     XCTAssert(checksum == entry.checksum)
                 }
             } catch {
-                XCTFail("Failed to unzip uncompressed folder entries")
+                XCTFail("Failed to unzip uncompressed folder entries. Error: \(error)")
             }
         }
     }
@@ -57,7 +57,7 @@ extension ZIPFoundationTests {
                     XCTAssert(checksum == entry.checksum)
                 }
             } catch {
-                XCTFail("Failed to unzip compressed folder entries")
+                XCTFail("Failed to unzip compressed folder entries. Error: \(error)")
             }
         }
     }
@@ -69,7 +69,7 @@ extension ZIPFoundationTests {
                 let checksum = try archive.extract(entry, consumer: { _ in })
                 XCTAssert(entry.checksum == checksum)
             } catch {
-                XCTFail("Failed to unzip data descriptor archive")
+                XCTFail("Failed to unzip data descriptor archive. Error: \(error)")
             }
         }
     }
@@ -81,7 +81,7 @@ extension ZIPFoundationTests {
                 let checksum = try archive.extract(entry, consumer: { _ in })
                 XCTAssert(entry.checksum == checksum)
             } catch {
-                XCTFail("Failed to unzip data descriptor archive")
+                XCTFail("Failed to unzip data descriptor archive. Error: \(error)")
             }
         }
     }
@@ -103,7 +103,7 @@ extension ZIPFoundationTests {
                 let checksum = try archive.extract(entry, consumer: { _ in })
                 XCTAssert(entry.checksum == checksum)
             } catch {
-                XCTFail("Failed to unzip MSDOS archive")
+                XCTFail("Failed to unzip MSDOS archive. Error: \(error)")
             }
         }
     }
@@ -122,7 +122,7 @@ extension ZIPFoundationTests {
         } catch let error as CocoaError {
             XCTAssert(error.code == CocoaError.fileWriteFileExists)
         } catch {
-            XCTFail("Unexpected error while trying to extract entry to existing URL.")
+            XCTFail("Unexpected error while trying to extract entry to existing URL. Error: \(error)")
             return
         }
         guard let linkEntry = archive["testZipItemLink"] else {
@@ -137,7 +137,7 @@ extension ZIPFoundationTests {
         } catch let error as CocoaError {
             XCTAssert(error.code == CocoaError.fileNoSuchFile)
         } catch {
-            XCTFail("Unexpected error while trying to extract entry to invalid URL.")
+            XCTFail("Unexpected error while trying to extract entry to invalid URL. Error: \(error)")
             return
         }
         XCTAssertNotNil(linkEntry)
@@ -146,7 +146,7 @@ extension ZIPFoundationTests {
         } catch let error as CocoaError {
             XCTAssert(error.code == CocoaError.fileWriteFileExists)
         } catch {
-            XCTFail("Unexpected error while trying to extract link entry to existing URL.")
+            XCTFail("Unexpected error while trying to extract link entry to existing URL. Error: \(error)")
             return
         }
     }
@@ -174,7 +174,7 @@ extension ZIPFoundationTests {
         } catch let error as Data.CompressionError {
             XCTAssert(error == Data.CompressionError.corruptedData)
         } catch {
-            XCTFail("Unexpected error while testing an archive with corrupt entry data.")
+            XCTFail("Unexpected error while testing an archive with corrupt entry data. Error: \(error)")
         }
     }
 
@@ -188,7 +188,7 @@ extension ZIPFoundationTests {
             } catch let error as Archive.ArchiveError {
                 XCTAssert(error == .invalidEntryPath)
             } catch {
-                XCTFail("Unexpected error while trying to extract entry with invalid symbolic link.")
+                XCTFail("Unexpected error while trying to extract entry with invalid symbolic link. Error: \(error)")
             }
         }
     }
@@ -201,7 +201,7 @@ extension ZIPFoundationTests {
             } catch let error as Archive.ArchiveError {
                 XCTAssert(error == .invalidCompressionMethod)
             } catch {
-                XCTFail("Unexpected error while trying to extract entry with invalid compression method link.")
+                XCTFail("Unexpected error while trying to extract entry with invalid compression method link. Error: \(error)")
             }
         }
     }
@@ -238,7 +238,7 @@ extension ZIPFoundationTests {
                 didCallCompletion = true
             }
         } catch {
-            XCTFail("Unexpected error while trying to extract empty file of uncompressed archive.")
+            XCTFail("Unexpected error while trying to extract empty file of uncompressed archive. Error: \(error)")
         }
         XCTAssert(didCallCompletion)
     }
@@ -257,7 +257,7 @@ extension ZIPFoundationTests {
             XCTAssert(error == Archive.ArchiveError.cancelledOperation)
             XCTAssertEqual(progress.fractionCompleted, 0.5, accuracy: .ulpOfOne)
         } catch {
-            XCTFail("Unexpected error while trying to cancel extraction.")
+            XCTFail("Unexpected error while trying to cancel extraction. Error: \(error)")
         }
     }
 
@@ -275,7 +275,7 @@ extension ZIPFoundationTests {
             XCTAssert(error == Archive.ArchiveError.cancelledOperation)
             XCTAssertEqual(progress.fractionCompleted, 0.5, accuracy: .ulpOfOne)
         } catch {
-            XCTFail("Unexpected error while trying to cancel extraction.")
+            XCTFail("Unexpected error while trying to cancel extraction. Error: \(error)")
         }
     }
 
