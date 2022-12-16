@@ -8,7 +8,7 @@
         stat(path, out)
     }
 
-    let S_IFLNK = mode_t(0)
+    let S_IFLNK = mode_t(40960)
 
     // https://stackoverflow.com/a/58037981/1125248
     // Algorithm: http://howardhinnant.github.io/date_algorithms.html
