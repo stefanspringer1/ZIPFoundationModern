@@ -14,7 +14,7 @@ import XCTest
 extension ZIPFoundationTests {
     func testExtractUncompressedFolderEntries() {
         let archive = archive(for: #function, mode: .read)
-        for entry in archive {
+        for (i, entry) in archive.enumerated() {
             do {
                 // Test extracting to memory
                 var checksum = try archive.extract(entry, bufferSize: 32, consumer: { _ in })
@@ -32,14 +32,14 @@ extension ZIPFoundationTests {
                     XCTAssert(checksum == entry.checksum)
                 }
             } catch {
-                XCTFail("Failed to unzip uncompressed folder entries. Error: \(error)")
+                XCTFail("Failed to unzip uncompressed folder entry \(i) (\(entry)) Error: \(error)")
             }
         }
     }
 
     func testExtractCompressedFolderEntries() {
         let archive = archive(for: #function, mode: .read)
-        for entry in archive {
+        for (i, entry) in archive.enumerated() {
             do {
                 // Test extracting to memory
                 var checksum = try archive.extract(entry, bufferSize: 128, consumer: { _ in })
@@ -57,31 +57,31 @@ extension ZIPFoundationTests {
                     XCTAssert(checksum == entry.checksum)
                 }
             } catch {
-                XCTFail("Failed to unzip compressed folder entries. Error: \(error)")
+                XCTFail("Failed to unzip compressed folder entry \(i) (\(entry)) Error: \(error)")
             }
         }
     }
 
     func testExtractUncompressedDataDescriptorArchive() {
         let archive = archive(for: #function, mode: .read)
-        for entry in archive {
+        for (i, entry) in archive.enumerated() {
             do {
                 let checksum = try archive.extract(entry, consumer: { _ in })
                 XCTAssert(entry.checksum == checksum)
             } catch {
-                XCTFail("Failed to unzip data descriptor archive. Error: \(error)")
+                XCTFail("Failed to unzip data descriptor archive entry \(i) (\(entry)) Error: \(error)")
             }
         }
     }
 
     func testExtractCompressedDataDescriptorArchive() {
         let archive = archive(for: #function, mode: .read)
-        for entry in archive {
+        for (i, entry) in archive.enumerated() {
             do {
                 let checksum = try archive.extract(entry, consumer: { _ in })
                 XCTAssert(entry.checksum == checksum)
             } catch {
-                XCTFail("Failed to unzip data descriptor archive. Error: \(error)")
+                XCTFail("Failed to unzip data descriptor archive entry \(i) (\(entry)). Error: \(error)")
             }
         }
     }
