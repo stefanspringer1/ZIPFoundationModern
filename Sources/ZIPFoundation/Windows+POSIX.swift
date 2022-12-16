@@ -6,6 +6,8 @@
     typealias lstat = _stat
     typealias mode_t = UInt16
 
+    let S_IFLNK = mode_t(0)
+
     // https://stackoverflow.com/a/58037981/1125248
     // Algorithm: http://howardhinnant.github.io/date_algorithms.html
     private func days_from_epoch(_ y: Int, _ m: Int, _ d: Int) -> Int {

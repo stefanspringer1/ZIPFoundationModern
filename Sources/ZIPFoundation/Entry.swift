@@ -153,7 +153,7 @@ public struct Entry: Equatable {
         var isDirectory = path.hasSuffix("/")
         switch osType {
         case .unix, .osx:
-            let mode = mode_t(centralDirectoryStructure.externalFileAttributes >> 16) & S_IFMT
+            let mode = mode_t(centralDirectoryStructure.externalFileAttributes >> 16) & mode_t(S_IFMT)
             switch mode {
             case mode_t(S_IFREG):
                 return .file

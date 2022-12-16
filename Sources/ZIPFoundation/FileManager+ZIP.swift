@@ -180,7 +180,7 @@ extension FileManager {
     {
         switch osType {
         case .unix, .osx:
-            let permissions = mode_t(externalFileAttributes >> 16) & ~S_IFMT
+            let permissions = mode_t(externalFileAttributes >> 16) & ~mode_t(S_IFMT)
             let defaultPermissions = entryType == .directory ? defaultDirectoryPermissions : defaultFilePermissions
             return permissions == 0 ? defaultPermissions : UInt16(permissions)
         default:
