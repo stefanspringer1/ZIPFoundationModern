@@ -55,12 +55,14 @@ public extension Data {
 
             #if os(Windows)
                 let checksum = UInt32(checksum)
+            #else
+                let checksum = UInt(checksum)
             #endif
 
             #if canImport(zlib)
-                return CRC32(zlib.crc32(UInt(checksum), bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
+                return CRC32(zlib.crc32(checksum, bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
             #else
-                return CRC32(CZLib.crc32(UInt(checksum), bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
+                return CRC32(CZLib.crc32(checksum, bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
             #endif
         }
     }
