@@ -207,7 +207,7 @@ extension FileManager {
         let fileManager = FileManager()
         let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
         var fileStat = stat()
-        lstat(entryFileSystemRepresentation, &fileStat)
+        try lstat(entryFileSystemRepresentation, &fileStat).requireLStatSuccess()
         let permissions = fileStat.st_mode
         return UInt16(permissions)
     }
@@ -219,7 +219,7 @@ extension FileManager {
         }
         let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
         var fileStat = stat()
-        lstat(entryFileSystemRepresentation, &fileStat)
+        try lstat(entryFileSystemRepresentation, &fileStat).requireLStatSuccess()
         #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
             let modTimeSpec = fileStat.st_mtimespec
         #else
@@ -238,7 +238,7 @@ extension FileManager {
         }
         let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
         var fileStat = stat()
-        lstat(entryFileSystemRepresentation, &fileStat)
+        try lstat(entryFileSystemRepresentation, &fileStat).requireLStatSuccess()
         guard fileStat.st_size >= 0 else {
             throw CocoaError(.fileReadTooLarge, userInfo: [NSFilePathErrorKey: url.path])
         }
@@ -253,7 +253,7 @@ extension FileManager {
         }
         let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
         var fileStat = stat()
-        lstat(entryFileSystemRepresentation, &fileStat)
+        try lstat(entryFileSystemRepresentation, &fileStat).requireLStatSuccess()
         return Entry.EntryType(mode: mode_t(fileStat.st_mode))
     }
 }
@@ -312,4 +312,18 @@ public extension URL {
         let parentDirectoryURL = URL(fileURLWithPath: parentDirectoryURL.path, isDirectory: true).standardized
         return standardized.absoluteString.hasPrefix(parentDirectoryURL.absoluteString)
     }
+}
+
+extension Int32 {
+    @discardableResult
+    func requireLStatSuccess() throws -> Int32 {
+        guard self == .zero else {
+            throw StatFailure.underlying(self)
+        }
+        return self
+    }
+}
+
+enum StatFailure: Error {
+    case underlying(Int32)
 }

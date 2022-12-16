@@ -330,7 +330,13 @@ extension ZIPFoundationTests {
     }
 
     func testPOSIXPermissions() {
+        /// Windows doesn't really "do" POSIX permissions
+        /// https://github.com/apple/swift-corelibs-foundation/blob/ef9c2272bce931f46ecc70467ff063b9b1e95495/Tests/Foundation/Tests/TestFileManager.swift#L86
+        #if os(Windows)
+        let permissions = NSNumber(value: Int16(0o700))
+        #else
         let permissions = NSNumber(value: Int16(0o753))
+        #endif
         let assetURL = resourceURL(for: #function, pathExtension: "png")
         let fileManager = FileManager()
         let archive = archive(for: #function, mode: .create)
