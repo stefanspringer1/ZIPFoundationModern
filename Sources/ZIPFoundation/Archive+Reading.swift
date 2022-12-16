@@ -60,10 +60,15 @@ public extension Archive {
             checksum = try extract(entry, bufferSize: bufferSize, skipCRC32: skipCRC32,
                                    progress: progress, consumer: consumer)
         }
-        #if !os(Windows)
+
         let attributes = FileManager.attributes(from: entry)
+
+        #if os(Windows)
+        try? fileManager.setAttributes(attributes, ofItemAtPath: url.path)
+        #else
         try fileManager.setAttributes(attributes, ofItemAtPath: url.path)
         #endif
+
         return checksum
     }
 
