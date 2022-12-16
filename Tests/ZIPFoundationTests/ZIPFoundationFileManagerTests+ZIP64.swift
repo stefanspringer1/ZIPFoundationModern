@@ -13,18 +13,18 @@ import XCTest
 
 extension ZIPFoundationTests {
     private enum ZIP64FileManagerTestsError: Error, CustomStringConvertible {
-        case failedToZipItem(url: URL)
+        case failedToZipItem(url: URL, underlying: Error?)
         case failedToReadArchive(url: URL)
-        case failedToUnzipItem
+        case failedToUnzipItem(underlying: Error?)
 
         var description: String {
             switch self {
-            case let .failedToZipItem(assetURL):
-                return "Failed to zip item at URL: \(assetURL)."
+            case let .failedToZipItem(assetURL, error):
+                return "Failed to zip item at URL: \(assetURL). (Error: \(String(describing: error)))"
             case let .failedToReadArchive(fileArchiveURL):
-                return "Failed to read archive at URL: \(fileArchiveURL)."
-            case .failedToUnzipItem:
-                return "Failed to unzip item."
+                return "Failed to read archive at URL: \(fileArchiveURL)"
+            case let .failedToUnzipItem(error):
+                return "Failed to unzip item. (Error: \(String(describing: error)))"
             }
         }
     }
@@ -110,10 +110,10 @@ extension ZIPFoundationTests {
         do {
             try FileManager().zipItem(at: assetURL, to: fileArchiveURL, compressionMethod: compressionMethod)
         } catch {
-            throw ZIP64FileManagerTestsError.failedToZipItem(url: assetURL)
+            throw ZIP64FileManagerTestsError.failedToZipItem(url: assetURL, underlying: error)
         }
         guard let archive = Archive(url: fileArchiveURL, accessMode: .read) else {
-            throw ZIP64FileManagerTestsError.failedToZipItem(url: fileArchiveURL)
+            throw ZIP64FileManagerTestsError.failedToReadArchive(url: fileArchiveURL)
         }
         XCTAssertNotNil(archive[assetURL.lastPathComponent])
         XCTAssert(archive.checkIntegrity())
@@ -126,7 +126,7 @@ extension ZIPFoundationTests {
         do {
             try fileManager.unzipItem(at: archive.url, to: destinationURL)
         } catch {
-            throw ZIP64FileManagerTestsError.failedToUnzipItem
+            throw ZIP64FileManagerTestsError.failedToUnzipItem(underlying: error)
         }
         var itemsExist = false
         for entry in archive {

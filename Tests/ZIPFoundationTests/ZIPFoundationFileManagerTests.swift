@@ -355,13 +355,12 @@ extension ZIPFoundationTests {
         let destinationURL = createDirectory(for: #function)
         do {
             try fileManager.unzipItem(at: archive.url, to: destinationURL)
+            XCTFail("Extraction should fail")
         } catch let error as Archive.ArchiveError {
             XCTAssert(error == Archive.ArchiveError.invalidCRC32)
-            return
         } catch {
             XCTFail("Extraction should fail with an archive error, got \(error) instead")
         }
-        XCTFail("Extraction should fail")
     }
 
     func testTraversalAttack() {
@@ -370,10 +369,10 @@ extension ZIPFoundationTests {
         let destinationURL = createDirectory(for: #function)
         do {
             try fileManager.unzipItem(at: archive.url, to: destinationURL)
+            XCTFail("Extraction should fail")
         } catch {
             XCTAssert((error as? CocoaError)?.code == .fileReadInvalidFileName); return
         }
-        XCTFail("Extraction should fail")
     }
 
     func testTemporaryReplacementDirectoryURL() {

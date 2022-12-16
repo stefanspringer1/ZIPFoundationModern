@@ -119,16 +119,16 @@ class ZIPFoundationTests: XCTestCase {
 
     func createDirectory(for testFunction: String) -> URL {
         let fileManager = FileManager()
-        var URL = ZIPFoundationTests.tempZipDirectoryURL
-        URL = URL.appendingPathComponent(pathComponent(for: testFunction))
+        var url = ZIPFoundationTests.tempZipDirectoryURL
+        url = url.appendingPathComponent(pathComponent(for: testFunction))
         do {
-            try fileManager.createDirectory(at: URL, withIntermediateDirectories: true, attributes: nil)
+            try fileManager.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
         } catch {
             XCTFail("Failed to get create directory for test function:\(testFunction)")
             type(of: self).tearDown()
             preconditionFailure()
         }
-        return URL
+        return url
     }
 
     #if !os(Windows)
