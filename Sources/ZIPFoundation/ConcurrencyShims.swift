@@ -25,7 +25,7 @@ extension FileManager {
                         shouldKeepParent: Bool = true,
                         compressionMethod: CompressionMethod = .none,
                         progressCallback: ProgressCallback? = nil) async throws {
-        try await withCancellableProgress(progressCallback: progressCallback) { progress in
+        try await withTaskCancellableProgress(progressCallback: progressCallback) { progress in
             try self.zipItem(at: sourceURL,
                              to: destinationURL,
                              shouldKeepParent: shouldKeepParent,
@@ -49,7 +49,7 @@ extension FileManager {
                           skipCRC32: Bool = false,
                           preferredEncoding: String.Encoding? = nil,
                           progressCallback: ProgressCallback? = nil) async throws {
-        try await withCancellableProgress(progressCallback: progressCallback) { progress in
+        try await withTaskCancellableProgress(progressCallback: progressCallback) { progress in
             try self.unzipItem(at: sourceURL,
                                to: destinationURL,
                                skipCRC32: skipCRC32,
@@ -60,7 +60,7 @@ extension FileManager {
 }
 
 
-func withCancellableProgress<T>(progressCallback: ProgressCallback? = nil, operation: @escaping (Progress) throws -> T) async rethrows -> T {
+func withTaskCancellableProgress<T>(progressCallback: ProgressCallback? = nil, operation: @escaping (Progress) throws -> T) async rethrows -> T {
     let progress = Progress()
     let observer = progress.observe(\.fractionCompleted) { p, _ in
         progressCallback?(p.fractionCompleted)
