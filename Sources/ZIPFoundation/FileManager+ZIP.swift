@@ -235,6 +235,9 @@ public extension URL {
     func isContained(in parentDirectoryURL: URL) -> Bool {
         // Ensure this URL is contained in the passed in URL
         let parentDirectoryURL = URL(fileURLWithPath: parentDirectoryURL.path, isDirectory: true).standardized
+        #if os(Windows)
+        print("\"\(standardized.absoluteString)\" VS. \"\(parentDirectoryURL.absoluteString)\"")
+        #endif
         return standardized.absoluteString.hasPrefix(parentDirectoryURL.absoluteString)
     }
 }
