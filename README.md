@@ -63,7 +63,9 @@ let package = Package(
     targets: [
         .target(
 		name: "<Your Target Name>",
-		dependencies: ["ZIPFoundation"]),
+		dependencies: [
+			.product(name: "ZIPFoundation", package: "ZIPFoundationModern")
+		]),
     ]
 )
 ```
