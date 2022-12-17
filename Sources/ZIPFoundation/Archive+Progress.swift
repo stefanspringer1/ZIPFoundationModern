@@ -47,12 +47,13 @@ extension Archive {
     /// - Parameter entry: The entry that will be removed.
     /// - Returns: The number of the work units.
     public func totalUnitCountForAddingItem(at url: URL) -> Int64 {
+        let fileManager = FileManager()
         var count = Int64(0)
         do {
-            let type = try FileManager.typeForItem(at: url)
+            let type = try fileManager.fileTypeForItem(at: url).entryType
             switch type {
             case .file, .symlink:
-                count = Int64(try FileManager.fileSizeForItem(at: url))
+                count = Int64(try fileManager.fileSizeForItem(at: url))
             case .directory:
                 count = defaultDirectoryUnitCount
             }

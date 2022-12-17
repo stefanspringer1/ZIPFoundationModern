@@ -61,12 +61,10 @@ public extension Archive {
                                    progress: progress, consumer: consumer)
         }
 
-        let attributes = FileManager.attributes(from: entry)
-
         #if os(Windows)
-        try? fileManager.setAttributes(attributes, ofItemAtPath: url.path)
+        try? fileManager.setAttributes(entry.fileAttributes, ofItemAtPath: url.path)
         #else
-        try fileManager.setAttributes(attributes, ofItemAtPath: url.path)
+        try fileManager.setAttributes(entry.fileAttributes, ofItemAtPath: url.path)
         #endif
 
         return checksum

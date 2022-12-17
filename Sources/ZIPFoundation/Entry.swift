@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import SystemPackage
 
 /// A value that represents a file, a directory or a symbolic link within a ZIP `Archive`.
 ///
@@ -24,14 +25,27 @@ public struct Entry: Equatable {
         /// Indicates a symbolic link.
         case symlink
 
-        init(mode: mode_t) {
+        init?(mode: mode_t) {
             switch mode & mode_t(S_IFMT) {
             case mode_t(S_IFDIR):
                 self = .directory
             case mode_t(S_IFLNK):
                 self = .symlink
-            default:
+            case mode_t(S_IFREG):
                 self = .file
+            default:
+                return nil
+            }
+        }
+
+        var mode: mode_t {
+            switch self {
+            case .file:
+                return S_IFREG
+            case .directory:
+                return S_IFDIR
+            case .symlink:
+                return S_IFLNK
             }
         }
     }
@@ -132,7 +146,12 @@ public struct Entry: Equatable {
     ///
     /// Contains the modification date and file permissions.
     public var fileAttributes: [FileAttributeKey: Any] {
-        FileManager.attributes(from: self)
+        let fileTime = centralDirectoryStructure.lastModFileTime
+        let fileDate = centralDirectoryStructure.lastModFileDate
+        var attributes = [FileAttributeKey: Any]()
+        attributes[.modificationDate] = Date(dateTime: (fileDate, fileTime))
+        attributes[.posixPermissions] = permissions.rawValue
+        return attributes
     }
 
     /// The `CRC32` checksum of the receiver.
@@ -145,6 +164,12 @@ public struct Entry: Equatable {
         return centralDirectoryStructure.crc32
     }
 
+    public var permissions: FilePermissions {
+        Self.permissions(for: FileAttributes(externalRawValue: centralDirectoryStructure.externalFileAttributes, isDirectoryHint: type == .directory).permissions,
+                         osType: Entry.OSType(rawValue: UInt(centralDirectoryStructure.versionMadeBy >> 8)),
+                         entryType: type)
+    }
+
     /// The `EntryType` of the receiver.
     public var type: EntryType {
         // OS Type is stored in the upper byte of versionMadeBy
@@ -153,17 +178,7 @@ public struct Entry: Equatable {
         var isDirectory = path.hasSuffix("/")
         switch osType {
         case .unix, .osx:
-            let mode = mode_t(centralDirectoryStructure.externalFileAttributes >> 16) & mode_t(S_IFMT)
-            switch mode {
-            case mode_t(S_IFREG):
-                return .file
-            case mode_t(S_IFDIR):
-                return .directory
-            case mode_t(S_IFLNK):
-                return .symlink
-            default:
-                return isDirectory ? .directory : .file
-            }
+            return FileAttributes(externalRawValue: centralDirectoryStructure.externalFileAttributes, isDirectoryHint: isDirectory).type
         case .msdos:
             isDirectory = isDirectory || ((centralDirectoryStructure.externalFileAttributes >> 4) == 0x01)
             fallthrough // For all other OSes we can only guess based on the directory suffix char
@@ -239,10 +254,26 @@ public struct Entry: Equatable {
         self.dataDescriptor = dataDescriptor
         self.zip64DataDescriptor = zip64DataDescriptor
     }
+
+    static func permissions(for externalFilePermissions: FilePermissions,
+                                 osType: Entry.OSType?,
+                                 entryType: Entry.EntryType) -> FilePermissions {
+       let defaultPermissions = entryType == .directory ? defaultDirectoryPermissions : defaultFilePermissions
+       guard let osType else {
+           return defaultPermissions
+       }
+
+       switch osType {
+       case .unix, .osx:
+           return externalFilePermissions.rawValue == 0 ? defaultPermissions : externalFilePermissions
+       default:
+           return defaultPermissions
+       }
+   }
 }
 
 extension Entry.CentralDirectoryStructure {
-    init(localFileHeader: Entry.LocalFileHeader, fileAttributes: UInt32, relativeOffset: UInt32,
+    init(localFileHeader: Entry.LocalFileHeader, fileAttributes: FileAttributes, relativeOffset: UInt32,
          extraField: (length: UInt16, data: Data))
     {
         versionMadeBy = UInt16(789)
@@ -259,7 +290,7 @@ extension Entry.CentralDirectoryStructure {
         fileCommentLength = UInt16(0)
         diskNumberStart = UInt16(0)
         internalFileAttributes = UInt16(0)
-        externalFileAttributes = fileAttributes
+        externalFileAttributes = fileAttributes.externalRawValue
         relativeOffsetOfLocalHeader = relativeOffset
         fileNameData = localFileHeader.fileNameData
         extraFieldData = extraField.data

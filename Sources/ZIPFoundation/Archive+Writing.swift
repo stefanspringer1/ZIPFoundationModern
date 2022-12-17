@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import SystemPackage
 
 public extension Archive {
     internal enum ModifyOperation: Int {
@@ -56,14 +57,14 @@ public extension Archive {
         guard fileManager.itemExists(at: fileURL) else {
             throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: fileURL.path])
         }
-        let type = try FileManager.typeForItem(at: fileURL)
+        let type = try fileManager.fileTypeForItem(at: fileURL).entryType
         // symlinks do not need to be readable
         guard type == .symlink || fileManager.isReadableFile(atPath: fileURL.path) else {
             throw CocoaError(.fileReadNoPermission, userInfo: [NSFilePathErrorKey: url.path])
         }
-        let modDate = try FileManager.fileModificationDateTimeForItem(at: fileURL)
-        let uncompressedSize = type == .directory ? 0 : try FileManager.fileSizeForItem(at: fileURL)
-        let permissions = try FileManager.permissionsForItem(at: fileURL)
+        let modDate = try fileManager.fileModificationDateTimeForItem(at: fileURL)
+        let uncompressedSize = type == .directory ? 0 : Int64(try fileManager.fileSizeForItem(at: fileURL))
+        let permissions = try fileManager.permissionsForItem(at: fileURL)
         var provider: Provider
         switch type {
         case .file:
@@ -115,7 +116,7 @@ public extension Archive {
     ///   - provider: A closure that accepts a position and a chunk size. Returns a `Data` chunk.
     /// - Throws: An error if the source data is invalid or the receiver is not writable.
     func addEntry(with path: String, type: Entry.EntryType, uncompressedSize: Int64,
-                  modificationDate: Date = Date(), permissions: UInt16? = nil,
+                  modificationDate: Date = Date(), permissions: FilePermissions? = nil,
                   compressionMethod: CompressionMethod = .none, bufferSize: Int = defaultWriteChunkSize,
                   progress: Progress? = nil, provider: Provider) throws
     {
@@ -153,7 +154,7 @@ public extension Archive {
             try archiveFile.seek(toOffset: startOfCD)
             _ = try Data.writeLargeChunk(existingData, size: existingSize, bufferSize: bufferSize, to: archiveFile)
             let permissions = permissions ?? (type == .directory ? defaultDirectoryPermissions : defaultFilePermissions)
-            let externalAttributes = FileManager.externalFileAttributesForEntry(of: type, permissions: permissions)
+            let externalAttributes = FileAttributes(type: type, permissions: permissions)
             let centralDir = try writeCentralDirectoryStructure(localFileHeader: localFileHeader,
                                                                 relativeOffset: UInt64(fileHeaderStart),
                                                                 externalFileAttributes: externalAttributes)

@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import SystemPackage
 
 extension FileManager {
     typealias CentralDirectoryStructure = Entry.CentralDirectoryStructure
@@ -43,7 +44,7 @@ extension FileManager {
         guard let archive = Archive(url: destinationURL, accessMode: .create) else {
             throw Archive.ArchiveError.unwritableArchive
         }
-        let isDirectory = try FileManager.typeForItem(at: sourceURL) == .directory
+        let isDirectory = try fileManager.fileTypeForItem(at: sourceURL) == .typeDirectory
         if isDirectory {
             let subPaths = try subpathsOfDirectory(atPath: sourceURL.path)
             var totalUnitCount = Int64(0)
@@ -158,105 +159,24 @@ extension FileManager {
         try createDirectory(at: parentDirectoryURL, withIntermediateDirectories: true, attributes: nil)
     }
 
-    class func attributes(from entry: Entry) -> [FileAttributeKey: Any] {
-        let centralDirectoryStructure = entry.centralDirectoryStructure
-        let entryType = entry.type
-        let fileTime = centralDirectoryStructure.lastModFileTime
-        let fileDate = centralDirectoryStructure.lastModFileDate
-        let defaultPermissions = entryType == .directory ? defaultDirectoryPermissions : defaultFilePermissions
-        var attributes = [.posixPermissions: defaultPermissions] as [FileAttributeKey: Any]
-        attributes[.modificationDate] = Date(dateTime: (fileDate, fileTime))
-        let versionMadeBy = centralDirectoryStructure.versionMadeBy
-        guard let osType = Entry.OSType(rawValue: UInt(versionMadeBy >> 8)) else { return attributes }
-
-        let externalFileAttributes = centralDirectoryStructure.externalFileAttributes
-        let permissions = permissions(for: externalFileAttributes, osType: osType, entryType: entryType)
-        attributes[.posixPermissions] = NSNumber(value: permissions)
-        return attributes
+    func permissionsForItem(at url: URL) throws -> FilePermissions {
+        FilePermissions(rawValue: (try attributesOfItem(atPath: url.path)[.posixPermissions] as! NSNumber).uint16Value)
     }
 
-    class func permissions(for externalFileAttributes: UInt32, osType: Entry.OSType,
-                           entryType: Entry.EntryType) -> UInt16
-    {
-        switch osType {
-        case .unix, .osx:
-            let permissions = mode_t(externalFileAttributes >> 16) & ~mode_t(S_IFMT)
-            let defaultPermissions = entryType == .directory ? defaultDirectoryPermissions : defaultFilePermissions
-            return permissions == 0 ? defaultPermissions : UInt16(permissions)
-        default:
-            return entryType == .directory ? defaultDirectoryPermissions : defaultFilePermissions
-        }
+    func fileTypeForItem(at url: URL) throws -> FileAttributeType {
+        FileAttributeType(rawValue: try attributesOfItem(atPath: url.path)[.type] as! String)
     }
 
-    class func externalFileAttributesForEntry(of type: Entry.EntryType, permissions: UInt16) -> UInt32 {
-        var typeInt: UInt16
-        switch type {
-        case .file:
-            typeInt = UInt16(S_IFREG)
-        case .directory:
-            typeInt = UInt16(S_IFDIR)
-        case .symlink:
-            typeInt = UInt16(S_IFLNK)
-        }
-        var externalFileAttributes = UInt32(typeInt | UInt16(permissions))
-        externalFileAttributes = (externalFileAttributes << 16)
-        return externalFileAttributes
+    func fileModificationDateTimeForItem(at url: URL) throws -> Date {
+        try attributesOfItem(atPath: url.path)[.modificationDate] as! Date
     }
 
-    class func permissionsForItem(at url: URL) throws -> UInt16 {
-        let fileManager = FileManager()
-        let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
-        var fileStat = stat()
-        lstat(entryFileSystemRepresentation, &fileStat)
-        let permissions = fileStat.st_mode
-        return UInt16(permissions)
-    }
-
-    class func fileModificationDateTimeForItem(at url: URL) throws -> Date {
-        let fileManager = FileManager()
-        guard fileManager.itemExists(at: url) else {
-            throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: url.path])
-        }
-        let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
-        var fileStat = stat()
-        lstat(entryFileSystemRepresentation, &fileStat)
-        #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-            let modTimeSpec = fileStat.st_mtimespec
-        #else
-            let modTimeSpec = fileStat.st_mtim
-        #endif
-
-        let timeStamp = TimeInterval(modTimeSpec.tv_sec) + TimeInterval(modTimeSpec.tv_nsec) / 1_000_000_000.0
-        let modDate = Date(timeIntervalSince1970: timeStamp)
-        return modDate
-    }
-
-    class func fileSizeForItem(at url: URL) throws -> Int64 {
-        let fileManager = FileManager()
-        guard fileManager.itemExists(at: url) else {
-            throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: url.path])
-        }
-        let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
-        var fileStat = stat()
-        lstat(entryFileSystemRepresentation, &fileStat)
-        guard fileStat.st_size >= 0 else {
-            throw CocoaError(.fileReadTooLarge, userInfo: [NSFilePathErrorKey: url.path])
-        }
-        // `st_size` is a signed int value
-        return Int64(fileStat.st_size)
-    }
-
-    class func typeForItem(at url: URL) throws -> Entry.EntryType {
-        let fileManager = FileManager()
-        guard url.isFileURL, fileManager.itemExists(at: url) else {
-            throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: url.path])
-        }
-        let entryFileSystemRepresentation = fileManager.fileSystemRepresentation(withPath: url.path)
-        var fileStat = stat()
-        lstat(entryFileSystemRepresentation, &fileStat)
-        return Entry.EntryType(mode: mode_t(fileStat.st_mode))
+    func fileSizeForItem(at url: URL) throws -> UInt64 {
+        (try attributesOfItem(atPath: url.path)[.size] as! NSNumber).uint64Value
     }
 }
+
+
 
 extension Date {
     init(dateTime: (UInt16, UInt16)) {
@@ -311,5 +231,87 @@ public extension URL {
         // Ensure this URL is contained in the passed in URL
         let parentDirectoryURL = URL(fileURLWithPath: parentDirectoryURL.path, isDirectory: true).standardized
         return standardized.absoluteString.hasPrefix(parentDirectoryURL.absoluteString)
+    }
+}
+
+struct FileAttributes {
+    let type: Entry.EntryType
+    let permissions: FilePermissions
+
+    init(type: Entry.EntryType, permissions: FilePermissions) {
+        self.type = type
+        self.permissions = permissions
+    }
+
+    init(mode: mode_t, isDirectoryHint: Bool? = nil) {
+        if let type = Entry.EntryType(mode: mode) {
+            self.type = type
+        } else if let isDirectory = isDirectoryHint {
+            self.type = isDirectory ? .directory : .file
+        } else {
+            fatalError("can't get file attributes for mode \(mode)")
+        }
+
+        self.permissions = .init(rawValue: mode & ~mode_t(S_IFMT))
+    }
+
+    init(externalRawValue: UInt32, isDirectoryHint: Bool? = nil) {
+        self.init(mode: mode_t(externalRawValue >> 16),
+                  isDirectoryHint: isDirectoryHint)
+    }
+
+    var rawValue: mode_t {
+        (type.mode | mode_t(permissions.rawValue))
+    }
+
+    var externalRawValue: UInt32 {
+        UInt32(type.mode | UInt16(permissions.rawValue)) << 16
+    }
+}
+
+extension Entry.EntryType {
+    var fileType: FileAttributeType {
+        switch self {
+        case .directory:
+            return .typeDirectory
+        case .symlink:
+            return .typeSymbolicLink
+        case .file:
+            return .typeRegular
+        }
+    }
+}
+
+extension FileAttributeType {
+    var entryType: Entry.EntryType {
+        switch self {
+        case .typeDirectory:
+            return .directory
+        case .typeSymbolicLink:
+            return .symlink
+        case .typeRegular:
+            return .file
+        default:
+            fatalError("can't conver from \(rawValue) to entryType")
+        }
+    }
+
+    var mode: mode_t {
+        switch self {
+        case .typeCharacterSpecial:
+            return S_IFCHR
+        case .typeDirectory:
+            return S_IFDIR
+        case .typeBlockSpecial:
+            return S_IFBLK
+        case .typeRegular:
+            return S_IFREG
+        case .typeSymbolicLink:
+            return S_IFLNK
+        case .typeSocket:
+            return S_IFSOCK
+        default:
+            fatalError("can't convert from \(rawValue) to statMode")
+        }
     }
 }

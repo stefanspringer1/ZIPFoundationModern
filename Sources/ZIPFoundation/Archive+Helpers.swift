@@ -118,7 +118,7 @@ extension Archive {
     }
 
     func writeCentralDirectoryStructure(localFileHeader: LocalFileHeader, relativeOffset: UInt64,
-                                        externalFileAttributes: UInt32) throws -> CentralDirectoryStructure
+                                        externalFileAttributes: FileAttributes) throws -> CentralDirectoryStructure
     {
         var extraUncompressedSize: UInt64?
         var extraCompressedSize: UInt64?

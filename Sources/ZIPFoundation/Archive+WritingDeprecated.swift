@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import SystemPackage
 
 public extension Archive {
     @available(*, deprecated,
@@ -33,7 +34,7 @@ public extension Archive {
     @available(*, deprecated,
                message: "Please use `Int64` for `uncompressedSize` and provider `position`. `Int` for `bufferSize`.")
     func addEntry(with path: String, type: Entry.EntryType, uncompressedSize: UInt32,
-                  modificationDate: Date = Date(), permissions: UInt16? = nil,
+                  modificationDate: Date = Date(), permissions: FilePermissions? = nil,
                   compressionMethod: CompressionMethod = .none, bufferSize: Int = defaultWriteChunkSize,
                   progress: Progress? = nil, provider: (_ position: Int, _ size: Int) throws -> Data) throws
     {

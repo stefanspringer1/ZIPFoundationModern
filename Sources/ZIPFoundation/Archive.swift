@@ -9,15 +9,16 @@
 //
 
 import Foundation
+import SystemPackage
 
 /// The default chunk size when reading entry data from an archive.
 public let defaultReadChunkSize = Int(16 * 1024)
 /// The default chunk size when writing entry data to an archive.
 public let defaultWriteChunkSize = defaultReadChunkSize
 /// The default permissions for newly added entries.
-public let defaultFilePermissions = UInt16(0o644)
+public let defaultFilePermissions = FilePermissions(rawValue: 0o644)
 /// The default permissions for newly added directories.
-public let defaultDirectoryPermissions = UInt16(0o755)
+public let defaultDirectoryPermissions = FilePermissions(rawValue: 0o755)
 let defaultPOSIXBufferSize = defaultReadChunkSize
 let defaultDirectoryUnitCount = Int64(1)
 let minEndOfCentralDirectoryOffset = Int64(22)

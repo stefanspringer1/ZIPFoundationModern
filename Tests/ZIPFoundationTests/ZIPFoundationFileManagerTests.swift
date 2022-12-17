@@ -225,20 +225,20 @@ extension ZIPFoundationTests {
         guard let entry = Entry(centralDirectoryStructure: cds, localFileHeader: lfh) else {
             XCTFail("Failed to create test entry."); return
         }
-        let attributes = FileManager.attributes(from: entry)
+        let attributes = entry.fileAttributes
         guard let permissions = attributes[.posixPermissions] as? UInt16 else {
             XCTFail("Failed to read file attributes."); return
         }
-        XCTAssert(permissions == defaultDirectoryPermissions)
+        XCTAssert(permissions == defaultDirectoryPermissions.rawValue)
     }
 
     func testFilePermissionHelperMethods() {
-        var permissions = FileManager.permissions(for: UInt32(777), osType: .unix, entryType: .file)
-        XCTAssert(permissions == defaultFilePermissions)
-        permissions = FileManager.permissions(for: UInt32(0), osType: .msdos, entryType: .file)
-        XCTAssert(permissions == defaultFilePermissions)
-        permissions = FileManager.permissions(for: UInt32(0), osType: .msdos, entryType: .directory)
-        XCTAssert(permissions == defaultDirectoryPermissions)
+        var permissions = Entry.permissions(for: FileAttributes(externalRawValue: 777, isDirectoryHint: false).permissions, osType: .unix, entryType: .file)
+        XCTAssertEqual(permissions, defaultFilePermissions)
+        permissions = Entry.permissions(for: .init(rawValue: 0), osType: .msdos, entryType: .file)
+        XCTAssertEqual(permissions, defaultFilePermissions)
+        permissions = Entry.permissions(for: .init(rawValue: 0), osType: .msdos, entryType: .directory)
+        XCTAssertEqual(permissions, defaultDirectoryPermissions)
     }
 
     func testFileModificationDateHelperMethods() {
@@ -247,8 +247,8 @@ extension ZIPFoundationTests {
         }
         let nonExistantURL = URL(fileURLWithPath: "/nonexistant")
         do {
-            _ = try FileManager.fileModificationDateTimeForItem(at: nonFileURL)
-            _ = try FileManager.fileModificationDateTimeForItem(at: nonExistantURL)
+            _ = try FileManager.default.fileModificationDateTimeForItem(at: nonFileURL)
+            _ = try FileManager.default.fileModificationDateTimeForItem(at: nonExistantURL)
         } catch let error as CocoaError {
             XCTAssert(error.code == CocoaError.fileReadNoSuchFile)
         } catch {
@@ -267,7 +267,7 @@ extension ZIPFoundationTests {
     func testFileSizeHelperMethods() {
         let nonExistantURL = URL(fileURLWithPath: "/nonexistant")
         do {
-            _ = try FileManager.fileSizeForItem(at: nonExistantURL)
+            _ = try FileManager.default.fileSizeForItem(at: nonExistantURL)
         } catch let error as CocoaError {
             XCTAssert(error.code == CocoaError.fileReadNoSuchFile)
         } catch { XCTFail("Unexpected error while trying to retrieve file size. Error: \(error)") }
@@ -276,7 +276,7 @@ extension ZIPFoundationTests {
     func testFileTypeHelperMethods() {
         let nonExistantURL = URL(fileURLWithPath: "/nonexistant")
         do {
-            _ = try FileManager.typeForItem(at: nonExistantURL)
+            _ = try FileManager.default.fileTypeForItem(at: nonExistantURL)
         } catch let error as CocoaError {
             XCTAssert(error.code == CocoaError.fileReadNoSuchFile)
         } catch {
@@ -286,9 +286,9 @@ extension ZIPFoundationTests {
             XCTFail("Failed to create test URL."); return
         }
         do {
-            _ = try FileManager.typeForItem(at: nonFileURL)
+            _ = try FileManager.default.fileTypeForItem(at: nonFileURL)
         } catch let error as CocoaError {
-            XCTAssert(error.code == CocoaError.fileReadNoSuchFile)
+            XCTAssert(error.code == CocoaError.fileReadUnknown, "got \(error)")
         } catch {
             XCTFail("Unexpected error while trying to retrieve file type. Error: \(error)")
         }
@@ -329,17 +329,20 @@ extension ZIPFoundationTests {
         } catch { XCTFail("Failed to test last file modification date. Error: \(error)") }
     }
 
-    #if !os(Windows)
     /// Windows doesn't really "do" POSIX permissions
     func testPOSIXPermissions() {
+        #if os(Windows)
+        let permissions = NSNumber(value: Int16(0o700))
+        #else
         let permissions = NSNumber(value: Int16(0o753))
+        #endif
         let assetURL = resourceURL(for: #function, pathExtension: "png")
         let fileManager = FileManager()
         let archive = archive(for: #function, mode: .create)
         do {
             try fileManager.setAttributes([.posixPermissions: permissions], ofItemAtPath: assetURL.path)
-            let assetPOSIXPermissions = (try fileManager.attributesOfItem(atPath: assetURL.path)[.posixPermissions] as? NSNumber)?.int16Value ?? 0
-            XCTAssertEqual(assetPOSIXPermissions, permissions.int16Value, "permissions didn't actualy get set. expected: \(String(permissions.int16Value, radix: 0o10)), actual: \(String(assetPOSIXPermissions, radix: 0o10))")
+            let assetPOSIXPermissions = try fileManager.permissionsForItem(at: assetURL).rawValue
+            XCTAssertEqual(assetPOSIXPermissions, permissions.uint16Value, "permissions didn't actualy get set. expected: \(String(permissions.uint16Value, radix: 0o10)), actual: \(String(assetPOSIXPermissions, radix: 0o10))")
             let relativePath = assetURL.lastPathComponent
             let baseURL = assetURL.deletingLastPathComponent()
             try archive.addEntry(with: relativePath, relativeTo: baseURL)
@@ -349,10 +352,9 @@ extension ZIPFoundationTests {
             guard let filePermissions = entry.fileAttributes[.posixPermissions] as? NSNumber else {
                 throw CocoaError(CocoaError.fileReadUnknown)
             }
-            XCTAssert(permissions.int16Value == filePermissions.int16Value, "invalid permissions. expected: \(String(permissions.int16Value, radix: 0o10)), actual: \(String(filePermissions.int16Value, radix: 0o10))")
+            XCTAssert(permissions.uint16Value == filePermissions.uint16Value, "invalid permissions. expected: \(String(permissions.uint16Value, radix: 0o10)), actual: \(String(filePermissions.uint16Value, radix: 0o10))")
         } catch { XCTFail("Failed to test POSIX permissions. Error: \(error)") }
     }
-    #endif
 
     func testCRC32Check() {
         let fileManager = FileManager()
