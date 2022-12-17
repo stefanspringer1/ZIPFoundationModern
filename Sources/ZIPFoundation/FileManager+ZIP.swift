@@ -164,7 +164,12 @@ extension FileManager {
     }
 
     func fileTypeForItem(at url: URL) throws -> FileAttributeType {
-        FileAttributeType(rawValue: try attributesOfItem(atPath: url.path)[.type] as! String)
+        let typeAny = try attributesOfItem(atPath: url.path)[.type]
+        if let string = typeAny as? String {
+            return FileAttributeType(rawValue: string)
+        } else {
+            return typeAny as! FileAttributeType
+        }
     }
 
     func fileModificationDateTimeForItem(at url: URL) throws -> Date {
