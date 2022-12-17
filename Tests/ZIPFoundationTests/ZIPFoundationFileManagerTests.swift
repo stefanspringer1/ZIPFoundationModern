@@ -355,17 +355,15 @@ extension ZIPFoundationTests {
             tempURLs.insert(tempDir)
         }
 
-        #if MEMORYFILE_IMPLEMENTED
-            // Also cover the fallback codepath in the helper method to generate a unique temp URL.
-            // In-memory archives have no filesystem representation and therefore don't need a per-volume
-            // temp URL.
-            guard let memoryArchive = Archive(data: Data(), accessMode: .create) else {
-                XCTFail("Temporary memory archive creation failed.")
-                return
-            }
+        // Also cover the fallback codepath in the helper method to generate a unique temp URL.
+        // In-memory archives have no filesystem representation and therefore don't need a per-volume
+        // temp URL.
+        guard let memoryArchive = Archive(data: Data(), accessMode: .create) else {
+            XCTFail("Temporary memory archive creation failed.")
+            return
+        }
 
-            let memoryTempURL = URL.temporaryReplacementDirectoryURL(for: memoryArchive)
-            XCTAssertNotNil(memoryTempURL, "Temporary URL creation for in-memory archive failed.")
-        #endif
+        let memoryTempURL = URL.temporaryReplacementDirectoryURL(for: memoryArchive)
+        XCTAssertNotNil(memoryTempURL, "Temporary URL creation for in-memory archive failed.")
     }
 }

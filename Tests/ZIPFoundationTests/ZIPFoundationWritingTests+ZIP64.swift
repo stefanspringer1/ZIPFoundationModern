@@ -30,7 +30,7 @@ extension ZIPFoundationTests {
         }
         XCTAssert(entry.checksum == data.crc32(checksum: 0))
         XCTAssert(archive.checkIntegrity())
-        guard let archiveFile = try? Handle(forReadingFrom: archive.url) else {
+        guard let archiveFile = try? ArchiveHandle(forReadingFrom: archive.url) else {
             XCTFail("Failed to read data of archive file."); return
         }
         do {

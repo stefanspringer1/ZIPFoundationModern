@@ -1,6 +1,6 @@
 import Foundation
 
-public class Handle {
+public class ArchiveHandle {
     public enum OpenFlags {
         case read
         case write
@@ -9,28 +9,26 @@ public class Handle {
         case append
     }
 
-    private enum Backing {
+    enum Backing {
         case memory(MemoryFile)
         case file(FileHandle)
     }
 
-    private let backing: Backing
+    let backing: Backing
 
     public let openFlags: Set<OpenFlags>
 
-    init(openedMemoryFile: MemoryFile, writable: Bool, append: Bool) {
-        backing = .memory(openedMemoryFile)
+    public init(data: Data, accessMode: Archive.AccessMode) {
+        backing = .memory(.init(data: data))
 
-        var flags: Set<OpenFlags> = [.read]
-        if writable {
-            flags.insert(.write)
+        switch accessMode {
+        case .read:
+            openFlags = [.read]
+        case .update:
+            openFlags = [.read, .write]
+        case .create:
+            openFlags = [.read, .write, .create, .truncateToZeroLength]
         }
-
-        if append {
-            flags.insert(.append)
-        }
-
-        openFlags = flags
     }
 
     /// equivalent to `rb`
@@ -61,8 +59,8 @@ public class Handle {
         switch backing {
         case let .file(file):
             return try file.seek(toOffset: offset)
-        case .memory:
-            fatalError()
+        case let .memory(mem):
+            return mem.seek(toOffset: offset)
         }
     }
 
@@ -70,8 +68,8 @@ public class Handle {
         switch backing {
         case let .file(file):
             return try file.readToEnd()
-        case .memory:
-            fatalError()
+        case let .memory(mem):
+            return try mem.readToEnd()
         }
     }
 
@@ -79,8 +77,8 @@ public class Handle {
         switch backing {
         case let .file(file):
             return try file.read(upToCount: count)
-        case .memory:
-            fatalError()
+        case let .memory(mem):
+            return try mem.read(upToCount: count)
         }
     }
 
@@ -88,8 +86,8 @@ public class Handle {
         switch backing {
         case let .file(file):
             return try file.offset()
-        case .memory:
-            fatalError()
+        case let .memory(mem):
+            return UInt64(mem.offset)
         }
     }
 
@@ -97,20 +95,21 @@ public class Handle {
         switch backing {
         case let .file(file):
             return try file.seekToEnd()
-        case .memory:
-            fatalError()
+        case let .memory(mem):
+            return mem.seekToEnd()
         }
     }
 
     public func write(contentsOf data: some DataProtocol) throws {
         guard openFlags.contains(.write) else { throw Data.DataError.unwritableFile }
 
+        if openFlags.contains(.append) { _ = try seekToEnd() }
+
         switch backing {
         case let .file(file):
-            if openFlags.contains(.append) { _ = try seekToEnd() }
             try file.write(contentsOf: data)
-        case .memory:
-            fatalError()
+        case let .memory(mem):
+            try mem.write(contentsOf: data)
         }
     }
 
@@ -118,8 +117,8 @@ public class Handle {
         switch backing {
         case let .file(file):
             try file.close()
-        case .memory:
-            fatalError()
+        case let .memory(mem):
+            mem.close()
         }
     }
 
@@ -128,7 +127,7 @@ public class Handle {
         case let .file(file):
             try file.synchronize()
         case .memory:
-            fatalError()
+            break
         }
     }
 
@@ -138,8 +137,8 @@ public class Handle {
         switch backing {
         case let .file(file):
             try file.truncate(atOffset: offset)
-        case .memory:
-            fatalError()
+        case let .memory(mem):
+            try mem.truncate(atOffset: offset)
         }
     }
 }

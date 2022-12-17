@@ -20,7 +20,7 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let file: Handle = try Handle(forReadingFrom: fileURL)
+        let file: ArchiveHandle = try ArchiveHandle(forReadingFrom: fileURL)
         // Close the file to exercise the error path during readStructure that deals with
         // unreadable file data.
         try file.close()
@@ -36,7 +36,7 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let file: Handle = try Handle(forReadingFrom: fileURL)
+        let file: ArchiveHandle = try ArchiveHandle(forReadingFrom: fileURL)
         // Close the file to exercise the error path during readChunk that deals with
         // unreadable file data.
         try file.close()
@@ -57,7 +57,7 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let file: Handle = try Handle(forReadingFrom: fileURL)
+        let file: ArchiveHandle = try ArchiveHandle(forReadingFrom: fileURL)
         // Close the file to exercise the error path during writeChunk that deals with
         // unwritable files.
         try file.close()
@@ -86,7 +86,7 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let file: Handle = try Handle(forUpdating: fileURL)
+        let file: ArchiveHandle = try ArchiveHandle(forUpdating: fileURL)
         let data = Data.makeRandomData(size: 1024)
         do {
             let writtenSize = try Data.writeLargeChunk(data, size: 1024, bufferSize: 256, to: file)
@@ -107,7 +107,7 @@ extension ZIPFoundationTests {
         let result = fileManager.createFile(atPath: fileURL.path, contents: Data(),
                                             attributes: nil)
         XCTAssert(result == true)
-        let file: Handle = try Handle(forReadingFrom: fileURL)
+        let file: ArchiveHandle = try ArchiveHandle(forReadingFrom: fileURL)
         let data = Data.makeRandomData(size: 1024)
         // Close the file to exercise the error path during writeChunk that deals with
         // unwritable files.

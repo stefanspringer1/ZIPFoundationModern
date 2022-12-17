@@ -35,7 +35,7 @@ public extension Archive {
                 throw CocoaError(.fileWriteFileExists, userInfo: [NSFilePathErrorKey: url.path])
             }
             try fileManager.createParentDirectoryStructure(for: url)
-            guard let destinationFile = try? Handle(forWriteUpdate: url) else {
+            guard let destinationFile = try? ArchiveHandle(forWriteUpdate: url) else {
                 throw CocoaError(.fileNoSuchFile)
             }
             defer { try? destinationFile.close() }

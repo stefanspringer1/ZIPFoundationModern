@@ -154,7 +154,7 @@ extension ZIPFoundationTests {
 
     func testCorruptFileErrorConditions() throws {
         let archiveURL = resourceURL(for: #function, pathExtension: "zip")
-        let destinationFile = try Handle(forUpdating: archiveURL)
+        let destinationFile = try ArchiveHandle(forUpdating: archiveURL)
 
         do {
             try destinationFile.seek(toOffset: 64)

@@ -68,7 +68,7 @@ public extension Archive {
         var provider: Provider
         switch type {
         case .file:
-            guard let entryFile = try? Handle(forReadingFrom: fileURL) else {
+            guard let entryFile = try? ArchiveHandle(forReadingFrom: fileURL) else {
                 throw CocoaError(.fileNoSuchFile)
             }
             defer { try? entryFile.close() }
@@ -229,8 +229,7 @@ public extension Archive {
             else {
                 throw ArchiveError.unwritableArchive
             }
-            archiveFile = config.file
-            memoryFile = config.memoryFile
+            archiveFile = config.handle
             endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
             zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
         } else {
@@ -246,7 +245,7 @@ public extension Archive {
                 _ = try fileManager.removeItem(at: url)
                 _ = try fileManager.moveItem(at: archive.url, to: url)
             #endif
-            guard let file = try? Handle(forUpdating: url) else { throw ArchiveError.unreadableArchive }
+            guard let file = try? ArchiveHandle(forUpdating: url) else { throw ArchiveError.unreadableArchive }
             archiveFile = file
         }
     }

@@ -27,7 +27,7 @@ extension Data {
         return subdata.withUnsafeBytes { $0.load(as: T.self) }
     }
 
-    static func readStruct<T>(from file: Handle, at offset: UInt64)
+    static func readStruct<T>(from file: ArchiveHandle, at offset: UInt64)
         -> T? where T: DataSerializable
     {
         guard offset <= .max else { return nil }
@@ -66,7 +66,7 @@ extension Data {
         return checksum
     }
 
-    static func readChunk(of size: Int, from file: Handle) throws -> Data {
+    static func readChunk(of size: Int, from file: ArchiveHandle) throws -> Data {
         guard size > 0 else {
             return Data()
         }
@@ -85,13 +85,13 @@ extension Data {
         return data
     }
 
-    static func write(chunk: Data, to file: Handle) throws -> Int {
+    static func write(chunk: Data, to file: ArchiveHandle) throws -> Int {
         try file.write(contentsOf: chunk)
         return chunk.count
     }
 
     static func writeLargeChunk(_ chunk: Data, size _: UInt64, bufferSize _: Int,
-                                to file: Handle) throws -> UInt64
+                                to file: ArchiveHandle) throws -> UInt64
     {
         try file.write(contentsOf: chunk)
         return UInt64(chunk.count)

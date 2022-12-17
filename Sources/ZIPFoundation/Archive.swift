@@ -127,7 +127,7 @@ public final class Archive: Sequence {
     public let url: URL
     /// Access mode for an archive file.
     public let accessMode: AccessMode
-    var archiveFile: Handle
+    var archiveFile: ArchiveHandle
     var endOfCentralDirectoryRecord: EndOfCentralDirectoryRecord
     var zip64EndOfCentralDirectory: ZIP64EndOfCentralDirectory?
     var preferredEncoding: String.Encoding?
@@ -170,13 +170,11 @@ public final class Archive: Sequence {
         guard let config = Archive.makeBackingConfiguration(for: url, mode: mode) else {
             return nil
         }
-        archiveFile = config.file
+        archiveFile = config.handle
         endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
         zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
 //        setvbuf(self.archiveFile, nil, _IOFBF, Int(defaultPOSIXBufferSize))
     }
-
-    var memoryFile: MemoryFile?
 
     /// Initializes a new in-memory ZIP `Archive`.
     ///
@@ -202,8 +200,7 @@ public final class Archive: Sequence {
         self.url = url
         accessMode = mode
         self.preferredEncoding = preferredEncoding
-        archiveFile = config.file
-        memoryFile = config.memoryFile
+        archiveFile = config.handle
         endOfCentralDirectoryRecord = config.endOfCentralDirectoryRecord
         zip64EndOfCentralDirectory = config.zip64EndOfCentralDirectory
     }
@@ -270,7 +267,7 @@ public final class Archive: Sequence {
 
     // MARK: - Helpers
 
-    static func scanForEndOfCentralDirectoryRecord(in file: Handle)
+    static func scanForEndOfCentralDirectoryRecord(in file: ArchiveHandle)
         -> EndOfCentralDirectoryStructure?
     {
         var eocdOffset: UInt64 = 0
@@ -293,7 +290,7 @@ public final class Archive: Sequence {
         return nil
     }
 
-    private static func scanForZIP64EndOfCentralDirectory(in file: Handle, eocdOffset: UInt64)
+    private static func scanForZIP64EndOfCentralDirectory(in file: ArchiveHandle, eocdOffset: UInt64)
         -> ZIP64EndOfCentralDirectory?
     {
         guard UInt64(ZIP64EndOfCentralDirectoryLocator.size) < eocdOffset else {

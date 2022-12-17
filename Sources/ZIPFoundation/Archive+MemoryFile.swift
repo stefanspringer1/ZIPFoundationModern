@@ -16,33 +16,88 @@ extension Archive {
 
 public extension Archive {
     /// Returns a `Data` object containing a representation of the receiver.
-    var data: Data? { memoryFile?.data }
+    var data: Data? {
+        switch archiveFile.backing {
+        case let .memory(mem):
+            return mem.data
+        case .file:
+            return nil
+        }
+    }
 }
 
 class MemoryFile {
-    private(set) var data: Data
-    private var offset = 0
+    enum Error: Swift.Error {
+        case isClosed
+    }
 
-    init(data: Data = Data()) {
+    private(set) var data: Data
+    private(set) var isClosed: Bool = false
+    private(set) var offset: Int = 0
+
+    init(data: Data) {
         self.data = data
     }
 
-    func open(mode: String) -> Handle? {
-        let cookie = Unmanaged.passRetained(self)
-        let writable = mode.count > 0 && (mode.first! != "r" || mode.last! == "+")
-        let append = mode.count > 0 && mode.first! == "a"
+    fileprivate func ensureNotClosed() throws {
+        guard !isClosed else { throw Error.isClosed }
+    }
 
-        #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(Android)
-            let result = writable
-                ? funopen(cookie.toOpaque(), readStub, writeStub, seekStub, closeStub)
-                : funopen(cookie.toOpaque(), readStub, nil, seekStub, closeStub)
-            if append {
-                fseeko(result, 0, SEEK_END)
-            }
-        #else
-            fatalError()
-        #endif
-        return .init(openedMemoryFile: self, writable: writable, append: append)
+    func seek(toOffset offset: UInt64) {
+        self.offset = Int(offset)
+    }
+
+    func readToEnd() throws -> Data? {
+        try ensureNotClosed()
+
+        let read = Data(data[offset ..< data.endIndex])
+        offset = data.endIndex
+        return read
+    }
+
+    func read(upToCount count: Int) throws -> Data? {
+        try ensureNotClosed()
+
+        let end = min((offset + count), data.endIndex)
+        let read = Data(data[offset ..< end])
+        offset = end
+        return read
+    }
+
+    func seekToEnd() -> UInt64 {
+        offset = data.endIndex
+        return UInt64(offset)
+    }
+
+    func write(contentsOf moreData: some DataProtocol) throws {
+        try ensureNotClosed()
+
+        let spaceRemaining = data.endIndex - offset
+
+        if moreData.count > spaceRemaining {
+            data.append(contentsOf: .init(repeating: 0, count: moreData.count - spaceRemaining))
+        }
+
+        data.replaceSubrange(offset ..< offset + moreData.count, with: moreData)
+
+        offset += moreData.count
+    }
+
+    func close() {
+        isClosed = true
+    }
+
+    func truncate(atOffset truncateOffset: UInt64) throws {
+        try ensureNotClosed()
+        let truncateOffset = Int(truncateOffset)
+
+        if truncateOffset < data.endIndex {
+            data.removeSubrange(truncateOffset ..< data.endIndex)
+        } else if truncateOffset > data.endIndex {
+            data.append(contentsOf: .init(repeating: 0, count: truncateOffset - data.endIndex))
+        }
+
+        self.offset = truncateOffset
     }
 }
 
@@ -85,77 +140,3 @@ private extension MemoryFile {
         return self.offset
     }
 }
-
-private func fileFromCookie(cookie: UnsafeRawPointer) -> MemoryFile {
-    Unmanaged<MemoryFile>.fromOpaque(cookie).takeUnretainedValue()
-}
-
-private func closeStub(_ cookie: UnsafeMutableRawPointer?) -> Int32 {
-    if let cookie {
-        Unmanaged<MemoryFile>.fromOpaque(cookie).release()
-    }
-    return 0
-}
-
-#if os(macOS) || os(iOS) || os(watchOS) || os(tvOS) || os(Android)
-    private func readStub(_ cookie: UnsafeMutableRawPointer?,
-                          _ bytePtr: UnsafeMutablePointer<Int8>?,
-                          _ count: Int32) -> Int32
-    {
-        guard let cookie, let bytePtr else { return 0 }
-        return Int32(fileFromCookie(cookie: cookie).readData(
-            buffer: UnsafeMutableRawBufferPointer(start: bytePtr, count: Int(count))))
-    }
-
-    private func writeStub(_ cookie: UnsafeMutableRawPointer?,
-                           _ bytePtr: UnsafePointer<Int8>?,
-                           _ count: Int32) -> Int32
-    {
-        guard let cookie, let bytePtr else { return 0 }
-        return Int32(fileFromCookie(cookie: cookie).writeData(
-            buffer: UnsafeRawBufferPointer(start: bytePtr, count: Int(count))))
-    }
-
-    private func seekStub(_ cookie: UnsafeMutableRawPointer?,
-                          _ offset: fpos_t,
-                          _ whence: Int32) -> fpos_t
-    {
-        guard let cookie else { return 0 }
-        return fpos_t(fileFromCookie(cookie: cookie).seek(offset: Int(offset), whence: whence))
-    }
-
-#elseif os(Windows)
-// nothing yet, sorry!
-#else
-    private func readStub(_ cookie: UnsafeMutableRawPointer?,
-                          _ bytePtr: UnsafeMutablePointer<Int8>?,
-                          _ count: Int) -> Int
-    {
-        guard let cookie, let bytePtr else { return 0 }
-        return fileFromCookie(cookie: cookie).readData(
-            buffer: UnsafeMutableRawBufferPointer(start: bytePtr, count: count))
-    }
-
-    private func writeStub(_ cookie: UnsafeMutableRawPointer?,
-                           _ bytePtr: UnsafePointer<Int8>?,
-                           _ count: Int) -> Int
-    {
-        guard let cookie, let bytePtr else { return 0 }
-        return fileFromCookie(cookie: cookie).writeData(
-            buffer: UnsafeRawBufferPointer(start: bytePtr, count: count))
-    }
-
-    private func seekStub(_ cookie: UnsafeMutableRawPointer?,
-                          _ offset: UnsafeMutablePointer<Int>?,
-                          _ whence: Int32) -> Int32
-    {
-        guard let cookie, let offset else { return 0 }
-        let result = fileFromCookie(cookie: cookie).seek(offset: Int(offset.pointee), whence: whence)
-        if result >= 0 {
-            offset.pointee = result
-            return 0
-        } else {
-            return -1
-        }
-    }
-#endif
