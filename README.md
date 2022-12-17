@@ -1,4 +1,15 @@
-<img src="https://user-images.githubusercontent.com/1577319/27564151-1d99e3a0-5ad6-11e7-8ab6-417c5b5a3ff2.png" width="489"/>
+# NOTE
+
+This is a fork of [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) with two goals: 
+
+1. Add portability to non-Apple operating systems by removing the need for having a system-installed `zlib` by simply providing `zlib` C source as a package dependency.
+2. Add compatibility for non-POSIX/Linux systems (currently only testing Windows) by removing low-level POSIX/Linux system calls like fopen, funopen, etc. and replacing them with the high level `FileHandle` of Foundation and (for `MemoryFile`) writing a FileHandle wrapper for Data.
+
+I kept as many of the original tests as possible and added a Windows environment to the test suite. Assume there is still broken stuff, but for my use case it seems to be as stable as ZIPFoundation on macOS, Linux, and Windows.
+
+
+
+# ZIPFoundation
 
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
