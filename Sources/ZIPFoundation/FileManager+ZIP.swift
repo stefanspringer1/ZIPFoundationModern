@@ -181,8 +181,6 @@ extension FileManager {
     }
 }
 
-
-
 extension Date {
     init(dateTime: (UInt16, UInt16)) {
         var msdosDateTime = Int(dateTime.0)
@@ -250,12 +248,12 @@ struct FileAttributes {
         if let type = Entry.EntryType(mode: mode) {
             self.type = type
         } else if let isDirectory = isDirectoryHint {
-            self.type = isDirectory ? .directory : .file
+            type = isDirectory ? .directory : .file
         } else {
             fatalError("can't get file attributes for mode \(mode)")
         }
 
-        self.permissions = .init(rawValue: mode & ~mode_t(S_IFMT))
+        permissions = .init(rawValue: mode & ~mode_t(S_IFMT))
     }
 
     init(externalRawValue: UInt32, isDirectoryHint: Bool? = nil) {
@@ -264,7 +262,7 @@ struct FileAttributes {
     }
 
     var rawValue: mode_t {
-        (type.mode | mode_t(permissions.rawValue))
+        type.mode | mode_t(permissions.rawValue)
     }
 
     var externalRawValue: UInt32 {

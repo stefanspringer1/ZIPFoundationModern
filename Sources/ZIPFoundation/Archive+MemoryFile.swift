@@ -39,7 +39,7 @@ class MemoryFile {
         self.data = data
     }
 
-    fileprivate func ensureNotClosed() throws {
+    private func ensureNotClosed() throws {
         guard !isClosed else { throw Error.isClosed }
     }
 
@@ -58,7 +58,7 @@ class MemoryFile {
     func read(upToCount count: Int) throws -> Data? {
         try ensureNotClosed()
 
-        let end = min((offset + count), data.endIndex)
+        let end = min(offset + count, data.endIndex)
         let read = Data(data[offset ..< end])
         offset = end
         return read
@@ -97,7 +97,7 @@ class MemoryFile {
             data.append(contentsOf: .init(repeating: 0, count: truncateOffset - data.endIndex))
         }
 
-        self.offset = truncateOffset
+        offset = truncateOffset
     }
 }
 

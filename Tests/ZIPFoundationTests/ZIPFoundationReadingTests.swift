@@ -107,49 +107,50 @@ extension ZIPFoundationTests {
             }
         }
     }
+
     /// extremely long path names don't work on Windows and will cause a fatalError in this code
     #if !os(Windows)
-    func testExtractErrorConditions() {
-        let archive = archive(for: #function, mode: .read)
-        XCTAssertNotNil(archive)
-        guard let fileEntry = archive["testZipItem.png"] else {
-            XCTFail("Failed to obtain test asset from archive.")
-            return
+        func testExtractErrorConditions() {
+            let archive = archive(for: #function, mode: .read)
+            XCTAssertNotNil(archive)
+            guard let fileEntry = archive["testZipItem.png"] else {
+                XCTFail("Failed to obtain test asset from archive.")
+                return
+            }
+            XCTAssertNotNil(fileEntry)
+            do {
+                _ = try archive.extract(fileEntry, to: archive.url)
+            } catch let error as CocoaError {
+                XCTAssert(error.code == CocoaError.fileWriteFileExists)
+            } catch {
+                XCTFail("Unexpected error while trying to extract entry to existing URL. Error: \(error)")
+                return
+            }
+            guard let linkEntry = archive["testZipItemLink"] else {
+                XCTFail("Failed to obtain test asset from archive.")
+                return
+            }
+            do {
+                let longFileName = String(repeating: ProcessInfo.processInfo.globallyUniqueString, count: 100)
+                var overlongURL = URL(fileURLWithPath: NSTemporaryDirectory())
+                overlongURL.appendPathComponent(longFileName)
+                _ = try archive.extract(fileEntry, to: overlongURL)
+            } catch let error as CocoaError {
+                XCTAssert(error.code == CocoaError.fileNoSuchFile)
+            } catch {
+                XCTFail("Unexpected error while trying to extract entry to invalid URL. Error: \(error)")
+                return
+            }
+            XCTAssertNotNil(linkEntry)
+            do {
+                _ = try archive.extract(linkEntry, to: archive.url)
+            } catch let error as CocoaError {
+                XCTAssert(error.code == CocoaError.fileWriteFileExists)
+            } catch {
+                XCTFail("Unexpected error while trying to extract link entry to existing URL. Error: \(error)")
+                return
+            }
         }
-        XCTAssertNotNil(fileEntry)
-        do {
-            _ = try archive.extract(fileEntry, to: archive.url)
-        } catch let error as CocoaError {
-            XCTAssert(error.code == CocoaError.fileWriteFileExists)
-        } catch {
-            XCTFail("Unexpected error while trying to extract entry to existing URL. Error: \(error)")
-            return
-        }
-        guard let linkEntry = archive["testZipItemLink"] else {
-            XCTFail("Failed to obtain test asset from archive.")
-            return
-        }
-        do {
-            let longFileName = String(repeating: ProcessInfo.processInfo.globallyUniqueString, count: 100)
-            var overlongURL = URL(fileURLWithPath: NSTemporaryDirectory())
-            overlongURL.appendPathComponent(longFileName)
-            _ = try archive.extract(fileEntry, to: overlongURL)
-        } catch let error as CocoaError {
-            XCTAssert(error.code == CocoaError.fileNoSuchFile)
-        } catch {
-            XCTFail("Unexpected error while trying to extract entry to invalid URL. Error: \(error)")
-            return
-        }
-        XCTAssertNotNil(linkEntry)
-        do {
-            _ = try archive.extract(linkEntry, to: archive.url)
-        } catch let error as CocoaError {
-            XCTAssert(error.code == CocoaError.fileWriteFileExists)
-        } catch {
-            XCTFail("Unexpected error while trying to extract link entry to existing URL. Error: \(error)")
-            return
-        }
-    }
     #endif
 
     func testCorruptFileErrorConditions() throws {

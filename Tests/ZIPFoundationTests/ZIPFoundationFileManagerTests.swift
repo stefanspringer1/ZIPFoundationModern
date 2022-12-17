@@ -290,9 +290,9 @@ extension ZIPFoundationTests {
     /// Windows doesn't really "do" POSIX permissions
     func testPOSIXPermissions() {
         #if os(Windows)
-        let permissions = NSNumber(value: Int16(0o700))
+            let permissions = NSNumber(value: Int16(0o700))
         #else
-        let permissions = NSNumber(value: Int16(0o753))
+            let permissions = NSNumber(value: Int16(0o753))
         #endif
         let assetURL = resourceURL(for: #function, pathExtension: "png")
         let fileManager = FileManager()

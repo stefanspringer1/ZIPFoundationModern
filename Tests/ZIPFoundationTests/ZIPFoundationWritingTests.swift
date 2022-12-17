@@ -116,18 +116,18 @@ extension ZIPFoundationTests {
         XCTAssertTrue(didCatchExpectedError)
 
         #if !os(Windows)
-        // Cover the error code path when `fopen` fails during entry addition.
-        let assetURL = resourceURL(for: #function, pathExtension: "txt")
-        runWithFileDescriptorLimit(0) {
-            do {
-                let relativePath = assetURL.lastPathComponent
-                let baseURL = assetURL.deletingLastPathComponent()
-                try archive.addEntry(with: relativePath, relativeTo: baseURL)
-            } catch {
-                didCatchExpectedError = true
+            // Cover the error code path when `fopen` fails during entry addition.
+            let assetURL = resourceURL(for: #function, pathExtension: "txt")
+            runWithFileDescriptorLimit(0) {
+                do {
+                    let relativePath = assetURL.lastPathComponent
+                    let baseURL = assetURL.deletingLastPathComponent()
+                    try archive.addEntry(with: relativePath, relativeTo: baseURL)
+                } catch {
+                    didCatchExpectedError = true
+                }
             }
-        }
-        XCTAssertTrue(didCatchExpectedError)
+            XCTAssertTrue(didCatchExpectedError)
         #endif
     }
 
@@ -273,22 +273,22 @@ extension ZIPFoundationTests {
         }
 
         #if !os(Windows)
-        // We don't have access to the temp archive file that Archive.remove
-        // uses. To exercise the error code path, we temporarily limit the number of open files for
-        // the test process to exercise the error code path here.
-        runWithFileDescriptorLimit(0) {
-            do {
-                try archive.remove(entryToRemove)
-            } catch let error as Archive.ArchiveError {
-                XCTAssertNotNil(error == .unwritableArchive)
-                didCatchExpectedError = true
-            } catch {
-                XCTFail("Unexpected error while trying to remove entry from unwritable archive.")
+            // We don't have access to the temp archive file that Archive.remove
+            // uses. To exercise the error code path, we temporarily limit the number of open files for
+            // the test process to exercise the error code path here.
+            runWithFileDescriptorLimit(0) {
+                do {
+                    try archive.remove(entryToRemove)
+                } catch let error as Archive.ArchiveError {
+                    XCTAssertNotNil(error == .unwritableArchive)
+                    didCatchExpectedError = true
+                } catch {
+                    XCTFail("Unexpected error while trying to remove entry from unwritable archive.")
+                }
             }
-        }
-        XCTAssertTrue(didCatchExpectedError)
+            XCTAssertTrue(didCatchExpectedError)
         #endif
-        
+
         didCatchExpectedError = false
         let readonlyArchive = self.archive(for: #function, mode: .read)
         do {

@@ -256,20 +256,21 @@ public struct Entry: Equatable {
     }
 
     static func permissions(for externalFilePermissions: FilePermissions,
-                                 osType: Entry.OSType?,
-                                 entryType: Entry.EntryType) -> FilePermissions {
-       let defaultPermissions = entryType == .directory ? defaultDirectoryPermissions : defaultFilePermissions
-       guard let osType else {
-           return defaultPermissions
-       }
+                            osType: Entry.OSType?,
+                            entryType: Entry.EntryType) -> FilePermissions
+    {
+        let defaultPermissions = entryType == .directory ? defaultDirectoryPermissions : defaultFilePermissions
+        guard let osType else {
+            return defaultPermissions
+        }
 
-       switch osType {
-       case .unix, .osx:
-           return externalFilePermissions.rawValue == 0 ? defaultPermissions : externalFilePermissions
-       default:
-           return defaultPermissions
-       }
-   }
+        switch osType {
+        case .unix, .osx:
+            return externalFilePermissions.rawValue == 0 ? defaultPermissions : externalFilePermissions
+        default:
+            return defaultPermissions
+        }
+    }
 }
 
 extension Entry.CentralDirectoryStructure {

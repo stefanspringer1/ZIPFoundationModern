@@ -62,9 +62,9 @@ public extension Archive {
         }
 
         #if os(Windows)
-        try? fileManager.setAttributes(entry.fileAttributes, ofItemAtPath: url.path)
+            try? fileManager.setAttributes(entry.fileAttributes, ofItemAtPath: url.path)
         #else
-        try fileManager.setAttributes(entry.fileAttributes, ofItemAtPath: url.path)
+            try fileManager.setAttributes(entry.fileAttributes, ofItemAtPath: url.path)
         #endif
 
         return checksum

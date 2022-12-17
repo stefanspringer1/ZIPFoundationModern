@@ -5,7 +5,7 @@ import PackageDescription
     let targets: [Target] = [
         .target(name: "ZIPFoundation",
                 dependencies: [
-                    .product(name: "SystemPackage", package: "swift-system")
+                    .product(name: "SystemPackage", package: "swift-system"),
                 ]),
         .testTarget(name: "ZIPFoundationTests",
                     dependencies: ["ZIPFoundation"],

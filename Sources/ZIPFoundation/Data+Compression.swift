@@ -56,7 +56,7 @@ public extension Data {
                 CRC32(zlib.crc32(UInt(checksum), bufferPointer.bindMemory(to: UInt8.self).baseAddress, length))
             }
         #else
-            return self.builtInCRC32(checksum: checksum)
+            return builtInCRC32(checksum: checksum)
         #endif
     }
 
