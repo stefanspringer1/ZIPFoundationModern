@@ -226,10 +226,10 @@ extension ZIPFoundationTests {
             XCTFail("Failed to create test entry."); return
         }
         let attributes = entry.fileAttributes
-        guard let permissions = attributes[.posixPermissions] as? UInt16 else {
+        guard let permissions = (attributes[.posixPermissions] as? NSNumber)?.uint16Value else {
             XCTFail("Failed to read file attributes."); return
         }
-        XCTAssert(permissions == defaultDirectoryPermissions.rawValue)
+        XCTAssert(permissions == UInt16(defaultDirectoryPermissions.rawValue))
     }
 
     func testFilePermissionHelperMethods() {

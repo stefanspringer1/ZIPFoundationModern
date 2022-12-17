@@ -150,7 +150,7 @@ public struct Entry: Equatable {
         let fileDate = centralDirectoryStructure.lastModFileDate
         var attributes = [FileAttributeKey: Any]()
         attributes[.modificationDate] = Date(dateTime: (fileDate, fileTime))
-        attributes[.posixPermissions] = permissions.rawValue
+        attributes[.posixPermissions] = NSNumber(value: permissions.rawValue)
         return attributes
     }
 
