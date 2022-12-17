@@ -1,26 +1,24 @@
 # NOTE
 
-This is a fork of [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) with two goals: 
+This is a fork of weichsel's [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) with two goals: 
 
 1. Add portability to non-Apple operating systems by removing the need for having a system-installed `zlib` by simply providing `zlib` C source as a package dependency.
-2. Add compatibility for non-POSIX/Linux systems (currently only testing Windows) by removing low-level POSIX/Linux system calls like fopen, funopen, etc. and replacing them with the high level `FileHandle` of Foundation and (for `MemoryFile`) writing a FileHandle wrapper for Data.
+2. Add compatibility for non-POSIX/Linux systems (currently only testing Windows) by removing low-level POSIX/Linux system calls like fopen, funopen, etc. and replacing them with the high level `FileHandle` of Foundation and (for in-memory archives) writing a file handle wrapper for `Data`.
 
-I kept as many of the original tests as possible and added a Windows environment to the test suite. Assume there could be broken stuff, but for my use case it seems to be as stable as ZIPFoundation on macOS, Linux, and Windows.
+I kept as many of the original tests as possible and added a Windows environment to the test suite. Assume there could be broken stuff, but for my use case it seems to be as stable as the original ZIPFoundation at least on macOS, Linux, and Windows.
+
+The following is an amended readme from the original repo.
 
 # ZIPFoundation
 
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
-[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
-[![CocoaPods Compatible](https://img.shields.io/cocoapods/v/ZIPFoundation.svg)](https://cocoapods.org/pods/ZIPFoundation)
-[![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux-lightgrey.svg)](https://github.com/weichsel/ZIPFoundation)
-[![Twitter](https://img.shields.io/badge/twitter-@weichsel-blue.svg?style=flat)](http://twitter.com/weichsel)
+[![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux%20|%20Windows-lightgrey.svg)](https://github.com/weichsel/ZIPFoundationModern)
 
 ZIP Foundation is a library to create, read and modify ZIP archive files.  
 It is written in Swift and based on [Apple's libcompression](https://developer.apple.com/documentation/compression) for high performance and energy efficiency.  
 To learn more about the performance characteristics of the framework, you can read [this blog post](https://thomas.zoechling.me/journal/2017/07/ZIPFoundation.html).
 
 - [Features](#features)
-- [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
     - [Zipping Files and Directories](#zipping-files-and-directories)
@@ -43,16 +41,10 @@ To learn more about the performance characteristics of the framework, you can re
 - [x] In-Memory Archives
 - [x] Deterministic Memory Consumption
 - [x] Linux compatibility
-- [x] No 3rd party dependencies (on Apple platforms, zlib on Linux)
-- [x] Comprehensive Unit and Performance Test Coverage
+- [x] Windows compatibility
+- [x] No 3rd party dependencies even on non-Apple platforms!
+- [x] Mostly Comprehensive Unit and Performance Test Coverage
 - [x] Complete Documentation
-
-## Requirements
-
-- iOS 12.0+ / macOS 10.11+ / tvOS 12.0+ / watchOS 2.0+
-- Or Linux with zlib development package
-- Xcode 11.0
-- Swift 4.0
 
 ## Installation
 
@@ -61,12 +53,12 @@ The Swift Package Manager is a dependency manager integrated with the Swift buil
 To add ZIP Foundation as a dependency, you have to add it to the `dependencies` of your `Package.swift` file and refer to that dependency in your `target`.
 
 ```swift
-// swift-tools-version:5.0
+// swift-tools-version:5.7
 import PackageDescription
 let package = Package(
     name: "<Your Product Name>",
     dependencies: [
-		.package(url: "https://github.com/weichsel/ZIPFoundation.git", .upToNextMajor(from: "0.9.0"))
+		.package(url: "https://github.com/gregcotten/ZIPFoundationModern.git", .upToNextMajor(from: "0.9.0"))
     ],
     targets: [
         .target(
@@ -80,46 +72,6 @@ After adding the dependency, you can fetch the library with:
 
 ```bash
 $ swift package resolve
-```
-
-### Carthage
-
-[Carthage](https://github.com/Carthage/Carthage) is a decentralized dependency manager.  
-Installation instructions can be found in the project's [README file](https://github.com/Carthage/Carthage#installing-carthage).
-
-To integrate ZIPFoundation into your Xcode project using Carthage, you have to add it to your `Cartfile`:
-
-```ogdl
-github "weichsel/ZIPFoundation" ~> 0.9
-```
-
-After adding ZIPFoundation to the `Cartfile`, you have to fetch the sources by running:
-
-```bash
-carthage update --no-build
-```
-
-The fetched project has to be integrated into your workspace by dragging `ZIPFoundation.xcodeproj` to Xcode's Project Navigator. (See [official Carhage docs](https://github.com/Carthage/Carthage#adding-frameworks-to-an-application).)
-
-### CocoaPods
-
-CocoaPods is a dependency manager for Objective-C and Swift.  
-To learn more about setting up your project for CocoaPods, please refer to the [official documentation](https://cocoapods.org/#install).  
-To integrate ZIP Foundation into your Xcode project using CocoaPods, you have to add it to your project's `Podfile`:
-
-```ruby
-source 'https://github.com/CocoaPods/Specs.git'
-platform :ios, '10.0'
-use_frameworks!
-target '<Your Target Name>' do
-    pod 'ZIPFoundation', '~> 0.9'
-end
-```
-
-Afterwards, run the following command:
-
-```bash
-$ pod install
 ```
 
 ## Usage
@@ -301,11 +253,11 @@ The [cancel()](https://developer.apple.com/documentation/foundation/progress/141
 
 ## Credits
 
-ZIP Foundation is written and maintained by [Thomas Zoechling](http://thomas.zoechling.me).  
-Twitter: [@weichsel](https://twitter.com/weichsel).
+This fork, `ZIPFoundationModern`, is adapted and maintained by [Greg Cotten](https://github.com/gregcotten).     
+The original [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) package is written and maintained by [Thomas Zoechling](http://thomas.zoechling.me).
 
 
 ## License
 
 ZIP Foundation is released under the MIT License.  
-See [LICENSE](https://github.com/weichsel/ZIPFoundation/blob/master/LICENSE) for details.
+See [LICENSE](https://github.com/gregcotten/ZIPFoundationModern/blob/master/LICENSE) for details.
