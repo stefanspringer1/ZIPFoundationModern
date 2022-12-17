@@ -160,7 +160,7 @@ extension FileManager {
     }
 
     func permissionsForItem(at url: URL) throws -> FilePermissions {
-        FilePermissions(rawValue: (try attributesOfItem(atPath: url.path)[.posixPermissions] as! NSNumber).uint16Value)
+        FilePermissions(rawValue: CInterop.Mode((try attributesOfItem(atPath: url.path)[.posixPermissions] as! NSNumber).uint16Value))
     }
 
     func fileTypeForItem(at url: URL) throws -> FileAttributeType {
@@ -265,7 +265,7 @@ struct FileAttributes {
     }
 
     var externalRawValue: UInt32 {
-        UInt32(type.mode | UInt16(permissions.rawValue)) << 16
+        UInt32(rawValue) << 16
     }
 }
 
