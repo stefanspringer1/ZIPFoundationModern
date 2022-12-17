@@ -233,9 +233,7 @@ extension Date {
 
 public extension URL {
     func isContained(in parentDirectoryURL: URL) -> Bool {
-        let parentDirectoryNormalized = URL(fileURLWithPath: parentDirectoryURL.path, isDirectory: true).standardized.absoluteString
-        let selfNormalized = FilePath(absoluteString).lexicallyNormalized().string
-        return selfNormalized.hasPrefix(parentDirectoryNormalized)
+        FilePath(absoluteString).lexicallyNormalized().starts(with: FilePath(parentDirectoryURL.absoluteString).lexicallyNormalized())
     }
 }
 
