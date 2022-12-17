@@ -34,17 +34,16 @@ extension FileManager {
                         shouldKeepParent: Bool = true, compressionMethod: CompressionMethod = .none,
                         progress: Progress? = nil) throws
     {
-        let fileManager = FileManager()
-        guard fileManager.itemExists(at: sourceURL) else {
+        guard itemExists(at: sourceURL) else {
             throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: sourceURL.path])
         }
-        guard !fileManager.itemExists(at: destinationURL) else {
+        guard !itemExists(at: destinationURL) else {
             throw CocoaError(.fileWriteFileExists, userInfo: [NSFilePathErrorKey: destinationURL.path])
         }
         guard let archive = Archive(url: destinationURL, accessMode: .create) else {
             throw Archive.ArchiveError.unwritableArchive
         }
-        let isDirectory = try fileManager.fileTypeForItem(at: sourceURL) == .typeDirectory
+        let isDirectory = try fileTypeForItem(at: sourceURL) == .typeDirectory
         if isDirectory {
             let subPaths = try subpathsOfDirectory(atPath: sourceURL.path)
             var totalUnitCount = Int64(0)
@@ -94,8 +93,7 @@ extension FileManager {
     public func unzipItem(at sourceURL: URL, to destinationURL: URL, skipCRC32: Bool = false,
                           progress: Progress? = nil, preferredEncoding: String.Encoding? = nil) throws
     {
-        let fileManager = FileManager()
-        guard fileManager.itemExists(at: sourceURL) else {
+        guard itemExists(at: sourceURL) else {
             throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: sourceURL.path])
         }
         guard let archive = Archive(url: sourceURL, accessMode: .read, preferredEncoding: preferredEncoding) else {
