@@ -242,18 +242,6 @@ extension ZIPFoundationTests {
     }
 
     func testFileModificationDateHelperMethods() {
-        guard let nonFileURL = URL(string: "https://www.peakstep.com/") else {
-            XCTFail("Failed to create file URL."); return
-        }
-        let nonExistantURL = URL(fileURLWithPath: "/nonexistant")
-        do {
-            _ = try FileManager.default.fileModificationDateTimeForItem(at: nonFileURL)
-            _ = try FileManager.default.fileModificationDateTimeForItem(at: nonExistantURL)
-        } catch let error as CocoaError {
-            XCTAssert(error.code == CocoaError.fileReadNoSuchFile)
-        } catch {
-            XCTFail("Unexpected error while trying to retrieve file modification date. Error: \(error)")
-        }
         let msDOSDate = Date(timeIntervalSince1970: TimeInterval(Int.min)).fileModificationDate
         XCTAssert(msDOSDate == 0)
         let msDOSTime = Date(timeIntervalSince1970: TimeInterval(Int.min)).fileModificationTime
@@ -262,36 +250,6 @@ extension ZIPFoundationTests {
         XCTAssert(invalidEarlyMSDOSDate == 33)
         let invalidLateMSDOSDate = Date(timeIntervalSince1970: 4_102_444_800).fileModificationDate
         XCTAssert(invalidLateMSDOSDate == 60961)
-    }
-
-    func testFileSizeHelperMethods() {
-        let nonExistantURL = URL(fileURLWithPath: "/nonexistant")
-        do {
-            _ = try FileManager.default.fileSizeForItem(at: nonExistantURL)
-        } catch let error as CocoaError {
-            XCTAssert(error.code == CocoaError.fileReadNoSuchFile)
-        } catch { XCTFail("Unexpected error while trying to retrieve file size. Error: \(error)") }
-    }
-
-    func testFileTypeHelperMethods() {
-        let nonExistantURL = URL(fileURLWithPath: "/nonexistant")
-        do {
-            _ = try FileManager.default.fileTypeForItem(at: nonExistantURL)
-        } catch let error as CocoaError {
-            XCTAssert(error.code == CocoaError.fileReadNoSuchFile)
-        } catch {
-            XCTFail("Unexpected error while trying to retrieve file type. Error: \(error)")
-        }
-        guard let nonFileURL = URL(string: "https://www.peakstep.com") else {
-            XCTFail("Failed to create test URL."); return
-        }
-        do {
-            _ = try FileManager.default.fileTypeForItem(at: nonFileURL)
-        } catch let error as CocoaError {
-            XCTAssert(error.code == CocoaError.fileReadUnknown, "got \(error)")
-        } catch {
-            XCTFail("Unexpected error while trying to retrieve file type. Error: \(error)")
-        }
     }
 
     func testFileModificationDate() {
