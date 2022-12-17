@@ -300,23 +300,4 @@ extension FileAttributeType {
             fatalError("can't conver from \(rawValue) to entryType")
         }
     }
-
-    var mode: mode_t {
-        switch self {
-        case .typeCharacterSpecial:
-            return S_IFCHR
-        case .typeDirectory:
-            return S_IFDIR
-        case .typeBlockSpecial:
-            return S_IFBLK
-        case .typeRegular:
-            return S_IFREG
-        case .typeSymbolicLink:
-            return S_IFLNK
-        case .typeSocket:
-            return S_IFSOCK
-        default:
-            fatalError("can't convert from \(rawValue) to statMode")
-        }
-    }
 }
