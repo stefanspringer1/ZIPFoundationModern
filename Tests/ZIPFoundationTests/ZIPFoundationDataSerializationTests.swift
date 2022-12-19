@@ -89,7 +89,7 @@ extension ZIPFoundationTests {
         let file: ArchiveHandle = try ArchiveHandle(forUpdating: fileURL)
         let data = Data.makeRandomData(size: 1024)
         do {
-            let writtenSize = try Data.writeLargeChunk(data, size: 1024, bufferSize: 256, to: file)
+            let writtenSize = try Data.writeLargeChunk(data, to: file)
             XCTAssertEqual(writtenSize, 1024)
             try file.seek(toOffset: 0)
             let writtenData = try Data.readChunk(of: Int(writtenSize), from: file)
@@ -113,7 +113,7 @@ extension ZIPFoundationTests {
         // unwritable files.
         try file.close()
         do {
-            let dataWritten = try Data.writeLargeChunk(data, size: 1024, bufferSize: 256, to: file)
+            let dataWritten = try Data.writeLargeChunk(data, to: file)
             XCTAssert(dataWritten == 0)
         } catch let error as Data.DataError {
             XCTAssert(error == .unwritableFile)

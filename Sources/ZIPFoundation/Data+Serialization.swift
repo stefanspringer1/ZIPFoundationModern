@@ -90,7 +90,7 @@ extension Data {
         return chunk.count
     }
 
-    static func writeLargeChunk(_ chunk: Data, size _: UInt64, bufferSize _: Int,
+    static func writeLargeChunk(_ chunk: Data,
                                 to file: ArchiveHandle) throws -> UInt64
     {
         try file.write(contentsOf: chunk)

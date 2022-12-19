@@ -152,7 +152,7 @@ public extension Archive {
                                                        checksum: checksum, modificationDateTime: modDateTime)
             // Central Directory
             try archiveFile.seek(toOffset: startOfCD)
-            _ = try Data.writeLargeChunk(existingData, size: existingSize, bufferSize: bufferSize, to: archiveFile)
+            _ = try Data.writeLargeChunk(existingData, to: archiveFile)
             let permissions = permissions ?? (type == .directory ? defaultDirectoryPermissions : defaultFilePermissions)
             let externalAttributes = FileAttributes(type: type, permissions: permissions)
             let centralDir = try writeCentralDirectoryStructure(localFileHeader: localFileHeader,
@@ -273,8 +273,7 @@ private extension Archive {
         try archiveFile.synchronize()
         try archiveFile.truncate(atOffset: localFileHeaderStart)
         try archiveFile.seek(toOffset: localFileHeaderStart)
-        _ = try Data.writeLargeChunk(existingCentralDirectory.data, size: existingCentralDirectory.size,
-                                     bufferSize: bufferSize, to: archiveFile)
+        _ = try Data.writeLargeChunk(existingCentralDirectory.data, to: archiveFile)
         _ = try Data.write(chunk: existingCentralDirectory.data, to: archiveFile)
         if let zip64EOCD = zip64EndOfCentralDirectory {
             _ = try Data.write(chunk: zip64EOCD.data, to: archiveFile)
