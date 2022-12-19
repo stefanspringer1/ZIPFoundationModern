@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/gregcotten/CSProgress",
       "state" : {
-        "branch" : "main",
-        "revision" : "0dffebbee2c0630371f00adffeea633fc9635047"
+        "branch" : "non-apple-compat",
+        "revision" : "e5ef16efde54427d3acd75dda8418ed53aa26778"
       }
     },
     {
