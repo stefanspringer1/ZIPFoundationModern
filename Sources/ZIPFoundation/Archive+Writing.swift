@@ -10,6 +10,7 @@
 
 import Foundation
 import SystemPackage
+import CSProgress
 
 public extension Archive {
     internal enum ModifyOperation: Int {
@@ -32,7 +33,7 @@ public extension Archive {
     /// - Throws: An error if the source file cannot be read or the receiver is not writable.
     func addEntry(with path: String, relativeTo baseURL: URL,
                   compressionMethod: CompressionMethod = .none,
-                  bufferSize: Int = defaultWriteChunkSize, progress: Progress? = nil) throws
+                  bufferSize: Int = defaultWriteChunkSize, progress: CSProgress? = nil) throws
     {
         let fileURL = baseURL.appendingPathComponent(path)
 
@@ -51,7 +52,7 @@ public extension Archive {
     ///   - progress: A progress object that can be used to track or cancel the add operation.
     /// - Throws: An error if the source file cannot be read or the receiver is not writable.
     func addEntry(with path: String, fileURL: URL, compressionMethod: CompressionMethod = .none,
-                  bufferSize: Int = defaultWriteChunkSize, progress: Progress? = nil) throws
+                  bufferSize: Int = defaultWriteChunkSize, progress: CSProgress? = nil) throws
     {
         let fileManager = FileManager()
         guard fileManager.itemExists(at: fileURL) else {
@@ -118,7 +119,7 @@ public extension Archive {
     func addEntry(with path: String, type: Entry.EntryType, uncompressedSize: Int64,
                   modificationDate: Date = Date(), permissions: FilePermissions? = nil,
                   compressionMethod: CompressionMethod = .none, bufferSize: Int = defaultWriteChunkSize,
-                  progress: Progress? = nil, provider: Provider) throws
+                  progress: CSProgress? = nil, provider: Provider) throws
     {
         guard accessMode != .read else { throw ArchiveError.unwritableArchive }
         // Directories and symlinks cannot be compressed
@@ -177,7 +178,7 @@ public extension Archive {
     ///   - bufferSize: The maximum size for the read and write buffers used during removal.
     ///   - progress: A progress object that can be used to track or cancel the remove operation.
     /// - Throws: An error if the `Entry` is malformed or the receiver is not writable.
-    func remove(_ entry: Entry, bufferSize: Int = defaultReadChunkSize, progress: Progress? = nil) throws {
+    func remove(_ entry: Entry, bufferSize: Int = defaultReadChunkSize, progress: CSProgress? = nil) throws {
         guard accessMode != .read else { throw ArchiveError.unwritableArchive }
         let (tempArchive, tempDir) = try makeTempArchive()
         defer { tempDir.map { try? FileManager().removeItem(at: $0) } }

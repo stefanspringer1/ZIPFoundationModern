@@ -36,6 +36,7 @@ class MemoryFile {
     private(set) var offset: Int = 0
 
     init(data: Data) {
+        assert(data.startIndex == 0, "Need zero-indexed data for any of this logic to work")
         self.data = data
     }
 
@@ -89,7 +90,7 @@ class MemoryFile {
 
     func truncate(atOffset truncateOffset: UInt64) throws {
         try ensureNotClosed()
-        let truncateOffset = Int(truncateOffset)
+        let truncateOffset = data.startIndex + Int(truncateOffset)
 
         if truncateOffset < data.endIndex {
             data.removeSubrange(truncateOffset ..< data.endIndex)
@@ -98,45 +99,5 @@ class MemoryFile {
         }
 
         offset = truncateOffset
-    }
-}
-
-private extension MemoryFile {
-    func readData(buffer: UnsafeMutableRawBufferPointer) -> Int {
-        let size = min(buffer.count, data.count - offset)
-        let start = data.startIndex
-        data.copyBytes(to: buffer.bindMemory(to: UInt8.self), from: start + offset ..< start + offset + size)
-        offset += size
-        return size
-    }
-
-    func writeData(buffer: UnsafeRawBufferPointer) -> Int {
-        let start = data.startIndex
-        if offset < data.count, offset + buffer.count > data.count {
-            data.removeSubrange(start + offset ..< start + data.count)
-        } else if offset > data.count {
-            data.append(Data(count: offset - data.count))
-        }
-        if offset == data.count {
-            data.append(buffer.bindMemory(to: UInt8.self))
-        } else {
-            let start = data.startIndex // May have changed in earlier mutation
-            data.replaceSubrange(start + offset ..< start + offset + buffer.count, with: buffer.bindMemory(to: UInt8.self))
-        }
-        offset += buffer.count
-        return buffer.count
-    }
-
-    func seek(offset: Int, whence: Int32) -> Int {
-        var result = -1
-        if whence == SEEK_SET {
-            result = offset
-        } else if whence == SEEK_CUR {
-            result = self.offset + offset
-        } else if whence == SEEK_END {
-            result = data.count + offset
-        }
-        self.offset = result
-        return self.offset
     }
 }

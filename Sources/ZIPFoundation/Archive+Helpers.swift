@@ -9,12 +9,13 @@
 //
 
 import Foundation
+import CSProgress
 
 extension Archive {
     // MARK: - Reading
 
     func readUncompressed(entry: Entry, bufferSize: Int, skipCRC32: Bool,
-                          progress: Progress? = nil, with consumer: Consumer) throws -> CRC32
+                          progress: CSProgress? = nil, with consumer: Consumer) throws -> CRC32
     {
         let size = entry.centralDirectoryStructure.effectiveUncompressedSize
         guard size <= .max else { throw ArchiveError.invalidEntrySize }
@@ -29,7 +30,7 @@ extension Archive {
     }
 
     func readCompressed(entry: Entry, bufferSize: Int, skipCRC32: Bool,
-                        progress: Progress? = nil, with consumer: Consumer) throws -> CRC32
+                        progress: CSProgress? = nil, with consumer: Consumer) throws -> CRC32
     {
         let size = entry.centralDirectoryStructure.effectiveCompressedSize
         guard size <= .max else { throw ArchiveError.invalidEntrySize }
@@ -46,7 +47,7 @@ extension Archive {
     // MARK: - Writing
 
     func writeEntry(uncompressedSize: Int64, type: Entry.EntryType,
-                    compressionMethod: CompressionMethod, bufferSize: Int, progress: Progress? = nil,
+                    compressionMethod: CompressionMethod, bufferSize: Int, progress: CSProgress? = nil,
                     provider: Provider) throws -> (sizeWritten: Int64, crc32: CRC32)
     {
         var checksum = CRC32(0)
@@ -211,7 +212,7 @@ extension Archive {
         return (record, zip64EOCD)
     }
 
-    func writeUncompressed(size: Int64, bufferSize: Int, progress: Progress? = nil,
+    func writeUncompressed(size: Int64, bufferSize: Int, progress: CSProgress? = nil,
                            provider: Provider) throws -> (sizeWritten: Int64, checksum: CRC32)
     {
         var position: Int64 = 0
@@ -229,7 +230,7 @@ extension Archive {
         return (sizeWritten, checksum)
     }
 
-    func writeCompressed(size: Int64, bufferSize: Int, progress: Progress? = nil,
+    func writeCompressed(size: Int64, bufferSize: Int, progress: CSProgress? = nil,
                          provider: Provider) throws -> (sizeWritten: Int64, checksum: CRC32)
     {
         var sizeWritten: Int64 = 0

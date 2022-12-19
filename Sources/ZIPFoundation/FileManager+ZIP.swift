@@ -10,6 +10,7 @@
 
 import Foundation
 import SystemPackage
+import CSProgress
 
 extension FileManager {
     typealias CentralDirectoryStructure = Entry.CentralDirectoryStructure
@@ -32,7 +33,7 @@ extension FileManager {
     /// - Throws: Throws an error if the source item does not exist or the destination URL is not writable.
     public func zipItem(at sourceURL: URL, to destinationURL: URL,
                         shouldKeepParent: Bool = true, compressionMethod: CompressionMethod = .none,
-                        progress: Progress? = nil) throws
+                        progress: CSProgress? = nil) throws
     {
         guard itemExists(at: sourceURL) else {
             throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: sourceURL.path])
@@ -91,7 +92,7 @@ extension FileManager {
     ///   - preferredEncoding: Encoding for entry paths. Overrides the encoding specified in the archive.
     /// - Throws: Throws an error if the source item does not exist or the destination URL is not writable.
     public func unzipItem(at sourceURL: URL, to destinationURL: URL, skipCRC32: Bool = false,
-                          progress: Progress? = nil, preferredEncoding: String.Encoding? = nil) throws
+                          progress: CSProgress? = nil, preferredEncoding: String.Encoding? = nil) throws
     {
         guard itemExists(at: sourceURL) else {
             throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: sourceURL.path])

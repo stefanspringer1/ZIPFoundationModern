@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import CSProgress
 
 extension Archive {
     /// The number of the work units that have to be performed when
@@ -20,8 +21,8 @@ extension Archive {
         Int64(offsetToStartOfCentralDirectory - entry.localSize)
     }
 
-    func makeProgressForRemoving(_ entry: Entry) -> Progress {
-        Progress(totalUnitCount: totalUnitCountForRemoving(entry))
+    func makeProgressForRemoving(_ entry: Entry) -> CSProgress {
+        CSProgress(totalUnitCount: totalUnitCountForRemoving(entry))
     }
 
     /// The number of the work units that have to be performed when
@@ -38,8 +39,8 @@ extension Archive {
         }
     }
 
-    func makeProgressForReading(_ entry: Entry) -> Progress {
-        Progress(totalUnitCount: totalUnitCountForReading(entry))
+    func makeProgressForReading(_ entry: Entry) -> CSProgress {
+        CSProgress(totalUnitCount: totalUnitCountForReading(entry))
     }
 
     /// The number of the work units that have to be performed when
@@ -61,7 +62,13 @@ extension Archive {
         return count
     }
 
-    func makeProgressForAddingItem(at url: URL) -> Progress {
-        Progress(totalUnitCount: totalUnitCountForAddingItem(at: url))
+    func makeProgressForAddingItem(at url: URL) -> CSProgress {
+        CSProgress(totalUnitCount: totalUnitCountForAddingItem(at: url))
+    }
+}
+
+public extension CSProgress {
+    convenience init() {
+        self.init(totalUnitCount: 0)
     }
 }

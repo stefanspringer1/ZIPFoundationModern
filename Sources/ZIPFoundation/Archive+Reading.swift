@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import CSProgress
 
 public extension Archive {
     /// Read a ZIP `Entry` from the receiver and write it to `url`.
@@ -22,7 +23,7 @@ public extension Archive {
     /// - Returns: The checksum of the processed content or 0 if the `skipCRC32` flag was set to `true`.
     /// - Throws: An error if the destination file cannot be written or the entry contains malformed content.
     func extract(_ entry: Entry, to url: URL, bufferSize: Int = defaultReadChunkSize, skipCRC32: Bool = false,
-                 progress: Progress? = nil) throws -> CRC32
+                 progress: CSProgress? = nil) throws -> CRC32
     {
         guard bufferSize > 0 else {
             throw ArchiveError.invalidBufferSize
@@ -81,7 +82,7 @@ public extension Archive {
     /// - Returns: The checksum of the processed content or 0 if the `skipCRC32` flag was set to `true`..
     /// - Throws: An error if the destination file cannot be written or the entry contains malformed content.
     func extract(_ entry: Entry, bufferSize: Int = defaultReadChunkSize, skipCRC32: Bool = false,
-                 progress: Progress? = nil, consumer: Consumer) throws -> CRC32
+                 progress: CSProgress? = nil, consumer: Consumer) throws -> CRC32
     {
         guard bufferSize > 0 else {
             throw ArchiveError.invalidBufferSize
