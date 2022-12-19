@@ -63,7 +63,7 @@ public extension FileManager {
 }
 
 func withTaskCancellableProgress<T>(progressCallback: ProgressCallback? = nil, operation: @escaping (CSProgress) throws -> T) async rethrows -> T {
-    let progress = CSProgress(totalUnitCount: 0)
+    let progress = CSProgress()
 
     if let progressCallback {
         progress.addFractionCompletedNotification { _, _, fractionCompleted in
