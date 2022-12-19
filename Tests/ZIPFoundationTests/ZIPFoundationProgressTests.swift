@@ -194,7 +194,6 @@ extension CSProgress {
         }
 
         addFractionCompletedNotification { done, total, fractionCompleted in
-            print("\(done) / \(total)")
             if fractionCompleted >= reachedAtLeast {
                 expect.fulfill()
                 self.cancel()
