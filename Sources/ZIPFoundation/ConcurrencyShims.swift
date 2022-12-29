@@ -72,9 +72,15 @@ func withTaskCancellableProgress<T>(progressCallback: ProgressCallback? = nil, o
     }
 
     return try await withTaskCancellationHandler {
-        try await Task {
-            try operation(progress)
-        }.value
+        do {
+            return try await Task {
+                try operation(progress)
+            }.value
+        } catch Archive.ArchiveError.cancelledOperation {
+            throw CancellationError()
+        } catch {
+            throw error
+        }
     } onCancel: {
         progress.cancel()
     }
