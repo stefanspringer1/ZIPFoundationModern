@@ -63,7 +63,6 @@ public extension FileManager {
 }
 
 func withTaskCancellableProgress<T>(progressCallback: ProgressCallback? = nil, operation: @escaping (CSProgress) throws -> T) async throws -> T {
-    try Task.checkCancellation()
     let progress = CSProgress()
 
     if let progressCallback {
@@ -73,6 +72,8 @@ func withTaskCancellableProgress<T>(progressCallback: ProgressCallback? = nil, o
     }
 
     return try await withTaskCancellationHandler {
+        try Task.checkCancellation()
+        
         do {
             return try await Task {
                 try operation(progress)
