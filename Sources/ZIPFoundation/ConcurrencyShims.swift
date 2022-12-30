@@ -65,9 +65,11 @@ public extension FileManager {
 func withTaskCancellableProgress<T>(progressCallback: ProgressCallback? = nil, operation: @escaping (CSProgress) throws -> T) async throws -> T {
     try Task.checkCancellation()
     let progress = CSProgress()
+    let callbackQueue = OperationQueue()
+    callbackQueue.maxConcurrentOperationCount = 1
 
     if let progressCallback {
-        progress.addFractionCompletedNotification { _, _, fractionCompleted in
+        progress.addFractionCompletedNotification(onQueue: callbackQueue) { _, _, fractionCompleted in
             progressCallback(fractionCompleted)
         }
     }
