@@ -3,10 +3,10 @@
     {
       "identity" : "csprogress",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/gregcotten/CSProgress",
+      "location" : "https://github.com/stefanspringer1/CSProgress",
       "state" : {
-        "branch" : "non-apple-compat",
-        "revision" : "a0b8927998dabb50bc2023d7effe98d48b402110"
+        "revision" : "b831bb234a8a2af02ccc04d6e91a62f7dabb7de4",
+        "version" : "0.0.1"
       }
     },
     {
