@@ -20,7 +20,7 @@ import PackageDescription
             name: "CZLib",
             publicHeadersPath: "include",
             cSettings: [
-                .unsafeFlags(["-Wno-shorten-64-to-32"]),
+                //.unsafeFlags(["-Wno-shorten-64-to-32"]), // this silences some warnings
                 .define("Z_HAVE_UNISTD_H", .when(platforms: [.macOS, .linux])),
                 .define("HAVE_STDARG_H"),
                 .define("HAVE_HIDDEN"),
